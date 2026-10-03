@@ -1,0 +1,18 @@
+{
+  "input_rows": 927794,
+  "rows_after_required_field_validation": 927694,
+  "rows_excluded_missing_or_invalid_required_fields": 100,
+  "rows_included_in_weighted_index": 909176,
+  "rows_excluded_unmapped_or_intentionally_out_of_scope_types": 18518,
+  "weights": {
+    "Other Theft": 29,
+    "Theft from Vehicle": 29,
+    "Mischief": 24,
+    "Offence Against a Person": 60,
+    "Break and Enter Residential/Other": 147,
+    "Break and Enter Commercial": 147,
+    "Theft of Vehicle": 66,
+    "Theft of Bicycle": 29
+  },
+  "note": "weighted_index is an experimental CSI-inspired prototype indicator, not Statistics Canada's official Crime Severity Index."
+}

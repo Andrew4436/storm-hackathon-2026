@@ -36,6 +36,8 @@ Save baseline predictions. This is your fallback if the ML model adds no meaning
 
 Use an interpretable model appropriate for count/trend data, such as regularized regression, random forest/gradient boosting with constrained features, or a simple count model.
 
+For now, we will start with a simple regression model.
+
 Start with lags, rolling averages, season/month, and area identity. Do not add weather/transit features until the core model and integration work.
 
 ### 4. Evaluate honestly
