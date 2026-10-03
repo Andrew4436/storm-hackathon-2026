@@ -1,0 +1,12 @@
+.csv
+.env
+.env.*
+! .env.example
+
+data/raw/
+ml/models/
+node_modules/
+.next/
+__pycache__/
+.venv/
+*.pyc
