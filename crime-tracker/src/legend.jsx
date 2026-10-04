@@ -1,20 +1,20 @@
-// Stormhacks 2026 
-// Just the legend
+import { LEGEND_ORDER, TIERS } from './config.js'
+import Swatch from './Swatch.jsx'
 
-function Legend() {
+export default function Legend({ mode, showNone, ref }) {
+  const rows = showNone ? [...LEGEND_ORDER, 'none'] : LEGEND_ORDER
   return (
-    <div className="legend">
-      <h3>Legend</h3>
-
-      <div>
-        Red = Bad
-      </div>
-
-      <div>
-        Green = Good
-      </div>
-    </div>
-  );
+    <section className="legend" aria-label="Map legend" ref={ref}>
+      <h2 className="legend__title">{mode === 'forecast' ? 'Forecast activity' : 'Reported activity'}</h2>
+      <ul className="legend__list">
+        {rows.map((tier) => (
+          <li key={tier} className="legend__row">
+            <Swatch tier={tier} />
+            {TIERS[tier].label}
+          </li>
+        ))}
+      </ul>
+      <p className="legend__note">Compared with each area&rsquo;s own recent history</p>
+    </section>
+  )
 }
-
-export default Legend;
