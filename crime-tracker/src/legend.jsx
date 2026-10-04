@@ -13,7 +13,6 @@ export default function Legend({ showNone }) {
           </li>
         ))}
       </ul>
-      <p className="legend__note">Compared with each area&rsquo;s own recent history</p>
     </section>
   )
 }

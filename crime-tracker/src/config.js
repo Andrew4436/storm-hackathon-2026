@@ -1,7 +1,5 @@
 // App-wide constants. Rename the app here; nothing else hard-codes the name.
 export const APP_NAME = 'NeighbourCast'
-export const QUESTION = 'Is this month unusual for this place?'
-export const TAGLINE = "Reported incidents in Vancouver's 24 neighbourhoods, compared with each one's own past."
 
 export const FIRST_MONTH = '2003-01'
 export const DATA_THROUGH = '2026-08' // last complete month

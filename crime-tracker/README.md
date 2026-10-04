@@ -22,13 +22,15 @@ The view is kept in the URL, so a demo can be bookmarked:
 
 ## Using the app
 
+- The **control bar** sits at the top left of the map (on phones, under the map). Its first row holds
+  **Historical / Forecast**, the month being shown, **How this works** and the **neighbourhood list**; its second row
+  holds **Play months**, the previous and next arrows and the month scrubber.
 - **Historical / Forecast** switch between past months and the forecast month. In Historical mode the scrubber and
   the arrows pick any complete month, and **Play months** steps forward one month at a time (`PLAY_INTERVAL_MS` in
   `src/config.js`) and stops at the last month. Playback is off in Forecast mode.
-- The **pulse strip** at the bottom has one cell per area, alphabetical, coloured for the current view. Hovering a cell
-  highlights that area on the map and clicking it opens the area. On touch screens, and from the keyboard, use the
-  neighbourhood list beside it.
-- Selecting an area (on the map or from the list) opens the **drawer** on the right: its figures, how it compares with
+- The **legend** at the bottom left names the four colours; every area is compared with its own history.
+- Selecting an area on the map, or from the neighbourhood list in the control bar ("Choose from the list", the route
+  for keyboard, touch and screen-reader users), opens the **drawer** on the right: its figures, how it compares with
   its own history, and a chart of recent months. On phones the drawer is a **bottom sheet**. **Close** or Escape closes
   it.
 - **How this works** opens the same drawer with the method, the limitations, the evaluation and the sources.
@@ -67,15 +69,15 @@ The partial month (`PARTIAL_MONTH` in `src/config.js`, `is_partial = 1`) is load
 
 | File | Purpose |
 |---|---|
-| `src/config.js` | App name, question and tagline, dates, tier labels and palette, map styling, limitations text |
+| `src/config.js` | App name, dates, tier labels and palette, map styling, limitations text |
 | `src/index.css` | Design tokens (ink, fog, tier colours, type scale, radii) and base styles |
 | `src/areas.js` | The 24 VPD names, polygon names, marker positions, URL slugs |
 | `src/api.js` | Loads and indexes the three files |
 | `src/App.jsx` | View state (mode, month, area, playback), URL sync, loading and error states, drawer |
-| `src/MapStage.jsx` | The full-bleed map and the panels floating over it; owns hover state |
+| `src/MapStage.jsx` | The full-bleed map and the panels floating over it; owns hover state; measures what the fit avoids (control bar, legend, zoom control, drawer) |
 | `src/MapView.jsx` | Leaflet map: one GeoJSON layer plus two circle markers, restyled with `setStyle`; panel- and drawer-aware fit |
 | `src/HoverCard.jsx` | The single hover card, rendered from React state (no Leaflet tooltips) |
-| `src/HeroPanel.jsx`, `src/ControlBar.jsx`, `src/Legend.jsx`, `src/PulseStrip.jsx` | Question, mode and month controls with playback, legend, city pulse and area list |
+| `src/ControlBar.jsx`, `src/Legend.jsx` | Mode and month controls with playback and the neighbourhood list; legend |
 | `src/Drawer.jsx`, `src/AreaDetail.jsx`, `src/HowItWorks.jsx` | Drawer (bottom sheet on phones), selected-area detail, "How this works" |
 | `src/Sparkline.jsx`, `src/Swatch.jsx`, `src/Icons.jsx` | 36-month chart, tier swatch and chip, inline icons |
 | `src/ErrorBoundary.jsx` | Shows a reload message instead of a blank page if rendering fails |

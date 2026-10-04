@@ -25,6 +25,11 @@ export const NextIcon = () => (
     <path d="M7.5 4.5 13 10l-5.5 5.5" />
   </Icon>
 )
+export const ChevronDownIcon = () => (
+  <Icon>
+    <path d="m5.5 7.75 4.5 4.5 4.5-4.5" />
+  </Icon>
+)
 export const CloseIcon = () => (
   <Icon>
     <path d="m5 5 10 10M15 5 5 15" />

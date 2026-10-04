@@ -14,7 +14,7 @@
   --fog-wash: rgba(238, 242, 247, 0.16); /* fog-100 at 16%: uncertainty bands */
   --fog-edge: rgba(238, 242, 247, 0.35); /* fog-100 at 35%: band outline */
 
-  /* Tiers: only on map fills, swatches, the pulse strip and chips. Keep in sync with config.js. */
+  /* Tiers: only on map fills, swatches and chips. Keep in sync with config.js. */
   --tier-below: #4fb3ac;
   --tier-typical: #7a8699;
   --tier-above: #e7a64e;

@@ -4,7 +4,6 @@ import { monthLabel } from './format.js'
 import { AREA_BY_NAME, AREA_BY_SLUG } from './areas.js'
 import { loadData } from './api.js'
 import MapStage from './MapStage.jsx'
-import HeroPanel from './HeroPanel.jsx'
 import Drawer from './Drawer.jsx'
 import AreaDetail from './AreaDetail.jsx'
 import HowItWorks from './HowItWorks.jsx'
@@ -47,7 +46,6 @@ function useData() {
 function StatusPage({ title, children }) {
   return (
     <div className="status-page">
-      <HeroPanel />
       <div className="status surface" role="status">
         <h2 className="status__title">{title}</h2>
         {children}
@@ -197,7 +195,6 @@ export default function App() {
         selected={selected}
         onSelect={onSelect}
         drawerOpen={drawerOpen}
-        areaSelectRef={areaSelectRef}
         controls={{
           mode,
           onMode,
@@ -209,6 +206,7 @@ export default function App() {
           onAbout,
           aboutOpen: sheet === 'about',
           aboutRef: aboutButtonRef,
+          selectRef: areaSelectRef,
         }}
       />
       <Drawer

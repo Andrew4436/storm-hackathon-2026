@@ -1,13 +1,35 @@
+import { AREAS } from './areas.js'
 import { FORECAST_MONTH } from './config.js'
 import { monthLabel } from './format.js'
-import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from './Icons.jsx'
+import { ChevronDownIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon } from './Icons.jsx'
 
 const MODES = [
   { id: 'historical', label: 'Historical' },
   { id: 'forecast', label: 'Forecast' },
 ]
 
-export default function ControlBar({ mode, onMode, month, onMonth, months, playing, onPlay, onAbout, aboutOpen, aboutRef }) {
+const SORTED = [...AREAS].sort((a, b) => a.name.localeCompare(b.name))
+
+/**
+ * Mode, month, "How this works" and the neighbourhood list on the first row; playback and the month scrubber on
+ * the second. The month label has a fixed width, so the bar never changes size as the months go by. The list is
+ * the keyboard, touch and screen-reader route to every area.
+ */
+export default function ControlBar({
+  mode,
+  onMode,
+  month,
+  onMonth,
+  months,
+  playing,
+  onPlay,
+  onAbout,
+  aboutOpen,
+  aboutRef,
+  selected,
+  onSelect,
+  selectRef,
+}) {
   const forecast = mode === 'forecast'
   const idx = Math.max(0, months.indexOf(month))
   const last = months.length - 1
@@ -42,6 +64,26 @@ export default function ControlBar({ mode, onMode, month, onMonth, months, playi
         >
           How this works
         </button>
+        <div className="select-wrap bar__area">
+          <label className="visually-hidden" htmlFor="area-select">
+            Neighbourhood
+          </label>
+          <select
+            id="area-select"
+            ref={selectRef}
+            className="select"
+            value={selected ?? ''}
+            onChange={(e) => onSelect(e.target.value || null)}
+          >
+            <option value="">Choose from the list</option>
+            {SORTED.map((a) => (
+              <option key={a.slug} value={a.name}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDownIcon />
+        </div>
       </div>
 
       <div className={forecast ? 'scrub scrub--off' : 'scrub'}>
