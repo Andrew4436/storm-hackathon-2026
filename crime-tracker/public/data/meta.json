@@ -1,31 +1,59 @@
 {
   "app": "NeighbourCast",
   "model": "poisson_glm",
-  "model_description": "Poisson regression (GLM)",
+  "model_description": "Poisson regression (log link) on each area's recent levels (last month, 3-, 6- and 12-month averages, same month last year, all as log1p) plus a calendar-month effect, fitted on 2010-2026 across all 24 neighbourhoods.",
   "data_through": "2026-08",
   "forecast_month": "2026-10",
   "horizon_months": 2,
-  "tier_window_months": 36,
-  "tier_thresholds_pct": [-5, 5],
-  "tier_reference": "trailing_mean",
+  "tier_window_months": 12,
+  "tier_thresholds_pct": [
+    -10.0,
+    10.0
+  ],
+  "tier_reference": "seasonal",
   "interval_level": 0.8,
   "evaluation": {
-    "folds": 20,
+    "folds": [
+      {
+        "name": "A",
+        "train_target_months": "2010-01..2024-12",
+        "test_target_months": "2025-01..2025-12",
+        "n_train": 4320,
+        "n_test": 288
+      },
+      {
+        "name": "B",
+        "train_target_months": "2010-01..2025-12",
+        "test_target_months": "2026-01..2026-08",
+        "n_train": 4608,
+        "n_test": 192
+      }
+    ],
     "pooled_mae_weighted_index": {
-      "mean_12": 585.1,
-      "previous_glm": 559.9,
-      "shipped": 559.9
+      "mean_12": 745.5,
+      "previous_glm": 713.1,
+      "shipped": 713.1
     },
     "improvement_vs_mean_12_pct": 4.3,
-    "improvement_vs_previous_pct": 0,
+    "improvement_vs_previous_pct": 0.0,
     "wape_pct": 12.9,
     "interval_coverage_pct": 79.7,
-    "tier_accuracy_pct": 53.0,
-    "tier_majority_baseline_pct": 61.1,
-    "tier_macro_f1": 0.378
+    "tier_accuracy_pct": 58.9,
+    "tier_majority_baseline_pct": 42.4,
+    "tier_macro_f1": 0.584
   },
-  "weights_source": "working values (CSI-inspired)",
+  "weights_source": "https://www150.statcan.gc.ca/n1/pub/85-004-x/2009001/t001-eng.htm",
+  "generated_from": "data/processed/neighbourhood_monthly.csv",
   "notes": [
-    "Placeholder written by the frontend with the current values; the ML pipeline overwrites this file (npm run sync-data)."
+    "All values are reported incidents (or their severity-weighted index) per neighbourhood per month; nothing rates any place.",
+    "Model chosen by a rule fixed before the run (reports/model_study.md): no candidate qualified; the reference GLM stays.",
+    "Pooled = 480 backtest rows (24 areas x 20 test months, 2025-01..2025-12, 2026-01..2026-08), horizon 2.",
+    "interval_coverage_pct is out-of-sample: ratios from fold A (2025) applied to fold B (2026); in-sample pooled coverage is 80% by construction.",
+    "Range multipliers 0.658..1.368 x forecast (Q10..Q90 of actual/forecast over 480 backtest points).",
+    "Tier: forecast vs the same calendar month in the last 12 complete months; below -10% / above +10%; same rule for history and forecast.",
+    "tier_majority_baseline_pct = accuracy of always guessing the most common realised tier.",
+    "Noise floor: for the median area (Marpole, ~66 incidents/month) Poisson noise alone is ~12% of a month's count.",
+    "2026-10 forecast tiers: above_typical 7, below_typical 8, insufficient_data 1, typical 8.",
+    "Severity weights: Statistics Canada 85-004-X (2009) Table 1; CSI-inspired index, not the official CSI."
   ]
 }
