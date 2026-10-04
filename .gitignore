@@ -1,12 +1,11 @@
-.csv
 .env
 .env.*
-! .env.example
+!.env.example
 
-data/raw/
 ml/models/
 node_modules/
 .next/
+dist/
 __pycache__/
 .venv/
 *.pyc
