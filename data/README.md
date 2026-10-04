@@ -24,7 +24,6 @@ These are rules, not suggestions. They apply to any code that reads the raw or p
 |---|---|---|---|
 | `stormhacks2026_data_cleaning.ipynb` | ~0.3 MB | 10 code cells | The cleaning pipeline. Run All from `data/` to regenerate the output. Every step has a markdown note. |
 | `raw/vancouver_crime_data.csv` | 87.8 MB | 962,117 | **Canonical raw input.** The VPD all-years export plus the 2022 download, with one header. |
-| `raw/crimedata_csv_AllNeighbourhoods_2022.csv` | 3.1 MB | 34,323 | 2022-only download. **Provenance only.** It is already merged into `vancouver_crime_data.csv`, so do not load both (that would double-count 2022). |
 | `processed/neighbourhood_monthly.csv` | 0.24 MB | 6,840 | **The output.** Reported incidents per neighbourhood per month. Written by the notebook's last cell. |
 | `README.md` | | | This file. |
 
@@ -37,7 +36,7 @@ Outside this folder:
 - **Source:** VPD GeoDASH open data, https://geodash.vpd.ca/opendata/ (CSV download, all neighbourhoods).
 - **Downloaded:** 2026-10-03, as two files:
   1. "AllNeighbourhoods_AllYears": 927,794 rows. VPD's all-years export **does not contain 2022**.
-  2. A separate single-year 2022 download: 34,323 rows.
+  2. A separate single-year 2022 download: 34,323 rows. (Not kept in the repo; its rows are in `raw/vancouver_crime_data.csv`.)
 - **Merge:** the two files were concatenated, keeping a single header row. Result: 927,794 + 34,323 = 962,117 data rows in `raw/vancouver_crime_data.csv`. No other change was made to the raw rows.
 - **Coverage:** 2003-01-01 to **2026-09-25** (last incident in the file).
 - **Raw columns:** `TYPE, YEAR, MONTH, DAY, HOUR, MINUTE, HUNDRED_BLOCK, NEIGHBOURHOOD, X, Y`.
