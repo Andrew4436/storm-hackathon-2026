@@ -1,4 +1,4 @@
-import { DATA_THROUGH } from './config.js'
+import { DATA_THROUGH, FORECAST_MONTH } from './config.js'
 import { AREAS } from './areas.js'
 
 // With VITE_API_URL set, read from the backend; otherwise read the static files in public/data/.
@@ -9,18 +9,31 @@ export const SOURCES = API
   ? { history: `${API}/history`, forecast: `${API}/forecast`, boundaries: `${API}/boundaries` }
   : {
       history: `${STATIC}/history.json`,
-      forecast: `${STATIC}/forecast_2026-10.json`,
+      forecast: `${STATIC}/forecast_${FORECAST_MONTH}.json`,
       boundaries: `${STATIC}/local-area-boundary.geojson`,
     }
 
-async function getJson(url, signal) {
-  const res = await fetch(url, { signal })
-  if (!res.ok) throw new Error(`${url} returned HTTP ${res.status}.`)
+/** An error with a plain-language summary (what failed) next to the technical detail. */
+function loadError(what, detail) {
+  const err = new Error(detail)
+  err.summary = `The ${what} could not be loaded.`
+  return err
+}
+
+async function getJson(url, signal, what) {
+  let res
+  try {
+    res = await fetch(url, { signal })
+  } catch (e) {
+    if (signal?.aborted) throw e
+    throw loadError(what, `${url}: ${e.message}`)
+  }
+  if (!res.ok) throw loadError(what, `${url} returned HTTP ${res.status}.`)
   try {
     return await res.json()
   } catch {
     // A static host may answer a missing file with its HTML index page.
-    throw new Error(`${url} did not return valid JSON (is the file missing?).`)
+    throw loadError(what, `${url} did not return valid JSON (is the file missing?).`)
   }
 }
 
@@ -29,12 +42,12 @@ const tierOf = (t) => (t ? t : 'none')
 
 export async function loadData(signal) {
   const [history, forecast, boundaries] = await Promise.all([
-    getJson(SOURCES.history, signal),
-    getJson(SOURCES.forecast, signal),
-    getJson(SOURCES.boundaries, signal),
+    getJson(SOURCES.history, signal, 'history file'),
+    getJson(SOURCES.forecast, signal, 'forecast file'),
+    getJson(SOURCES.boundaries, signal, 'neighbourhood boundary file'),
   ])
   if (!Array.isArray(history) || !Array.isArray(forecast) || !Array.isArray(boundaries?.features)) {
-    throw new Error('Unexpected data format')
+    throw loadError('data', 'One of the data files has an unexpected format.')
   }
 
   const byKey = new Map()
@@ -43,7 +56,7 @@ export async function loadData(signal) {
   for (const r of history) {
     const row = { ...r, tier: tierOf(r.relative_activity_tier) }
     byKey.set(`${r.neighbourhood}|${r.month}`, row)
-    // The partial month (is_partial = 1, 2026-09) is never shown as a complete month.
+    // The partial month (is_partial = 1, PARTIAL_MONTH in config) is never shown as a complete month.
     if (r.is_partial === 1 || r.month > DATA_THROUGH) continue
     monthSet.add(r.month)
     if (!seriesByArea.has(r.neighbourhood)) seriesByArea.set(r.neighbourhood, [])

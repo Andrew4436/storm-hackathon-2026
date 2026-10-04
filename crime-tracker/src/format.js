@@ -12,10 +12,10 @@ export function monthLabel(key, short = false) {
   return `${short ? name.slice(0, 3) : name} ${y}`
 }
 
-export function addMonths(key, n) {
-  const [y, m] = key.split('-').map(Number)
-  const t = y * 12 + (m - 1) + n
-  return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`
+/** "25 September 2026" from "2026-09-25". */
+export function dayLabel(key) {
+  const [y, m, d] = key.split('-').map(Number)
+  return `${d} ${MONTHS[m - 1]} ${y}`
 }
 
 const TYPICAL = `this area's typical level (${TIER_WINDOW_MONTHS}-month average)`
@@ -26,3 +26,8 @@ export function pctText(pct) {
   if (r === 0) return `About the same as ${TYPICAL}`
   return `${Math.abs(r)}% ${r > 0 ? 'above' : 'below'} ${TYPICAL}`
 }
+
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
+
+/** Small whole numbers in words ("two months ahead"), larger ones as digits. */
+export const numberWord = (n) => WORDS[n] ?? fmtNum(n)

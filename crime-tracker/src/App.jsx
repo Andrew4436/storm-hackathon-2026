@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { APP_NAME, DATA_NOTE, DATA_THROUGH, FIRST_MONTH, TAGLINE, TIERS } from './config.js'
+import { DATA_THROUGH, FIRST_MONTH, FORECAST_MONTH, PLAY_INTERVAL_MS } from './config.js'
+import { monthLabel } from './format.js'
 import { AREA_BY_NAME, AREA_BY_SLUG } from './areas.js'
-import { loadData, recordFor } from './api.js'
-import Controls from './Controls.jsx'
-import MapView from './MapView.jsx'
-import Legend from './Legend.jsx'
-import DetailPanel from './DetailPanel.jsx'
-import About from './About.jsx'
+import { loadData } from './api.js'
+import MapStage from './MapStage.jsx'
+import HeroPanel from './HeroPanel.jsx'
+import Drawer from './Drawer.jsx'
+import AreaDetail from './AreaDetail.jsx'
+import HowItWorks from './HowItWorks.jsx'
 import './App.css'
+
+const NO_MONTHS = []
 
 /** ?mode=forecast|historical&month=YYYY-MM&area=slug, so a view can be bookmarked. */
 function readUrl() {
@@ -41,11 +44,14 @@ function useData() {
   return [state, retry]
 }
 
-function StatusCard({ title, children }) {
+function StatusPage({ title, children }) {
   return (
-    <div className="status" role="status">
-      <h2>{title}</h2>
-      {children}
+    <div className="status-page">
+      <HeroPanel />
+      <div className="status surface" role="status">
+        <h2 className="status__title">{title}</h2>
+        {children}
+      </div>
     </div>
   )
 }
@@ -55,8 +61,15 @@ export default function App() {
   const [mode, setMode] = useState(initial.mode)
   const [month, setMonth] = useState(initial.month)
   const [selected, setSelected] = useState(initial.area)
+  const [sheet, setSheet] = useState(null) // 'about' while "How this works" is open
+  const [playing, setPlaying] = useState(false)
   const [state, retry] = useData()
-  const legendRef = useRef(null)
+  const months = state.data?.months ?? NO_MONTHS
+
+  const aboutButtonRef = useRef(null)
+  const areaSelectRef = useRef(null)
+  const sheetHeadingRef = useRef(null)
+  const monthRef = useRef(month)
 
   useEffect(() => {
     const p = new URLSearchParams()
@@ -66,65 +79,146 @@ export default function App() {
     window.history.replaceState(null, '', `${window.location.pathname}?${p}`)
   }, [mode, month, selected])
 
-  const onSelect = useCallback((name) => setSelected(name), [])
+  // Playback: one month every PLAY_INTERVAL_MS through the historical range, stopping at the last month.
+  useEffect(() => {
+    monthRef.current = month
+  }, [month])
+  useEffect(() => {
+    if (!playing || !months.length) return
+    const id = setInterval(() => {
+      const i = months.indexOf(monthRef.current)
+      if (i < 0 || i >= months.length - 1) {
+        setPlaying(false)
+        return
+      }
+      monthRef.current = months[i + 1]
+      setMonth(months[i + 1])
+      if (i + 1 >= months.length - 1) setPlaying(false)
+    }, PLAY_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [playing, months])
+
+  const onSelect = useCallback((name) => {
+    setSelected(name)
+    if (name) setSheet(null)
+  }, [])
+  const onMode = useCallback((m) => {
+    setMode(m)
+    if (m === 'forecast') setPlaying(false)
+  }, [])
+  const onMonth = useCallback((m) => {
+    setPlaying(false)
+    setMonth(m)
+  }, [])
+  const onPlay = useCallback(() => {
+    if (playing) {
+      setPlaying(false)
+      return
+    }
+    if (months.indexOf(month) >= months.length - 1) {
+      monthRef.current = months[0]
+      setMonth(months[0])
+    }
+    setPlaying(true)
+  }, [playing, months, month])
+  const onAbout = useCallback(() => setSheet((s) => (s === 'about' ? null : 'about')), [])
+
+  const closeDrawer = useCallback(() => {
+    if (sheet) {
+      setSheet(null)
+      aboutButtonRef.current?.focus()
+    } else {
+      // The drawer turns inert as it closes; if focus was inside it, hand it to the neighbourhood list.
+      const active = document.activeElement
+      if (!active || active === document.body || active.closest('.drawer')) areaSelectRef.current?.focus()
+      setSelected(null)
+    }
+  }, [sheet])
+
+  // Move focus into "How this works" when it opens; Escape closes whichever drawer is showing.
+  useEffect(() => {
+    if (sheet === 'about') sheetHeadingRef.current?.focus({ preventScroll: true })
+  }, [sheet])
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape' && (sheet || selected)) closeDrawer()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [sheet, selected, closeDrawer])
+
+  // Keep the last content in the drawer while it slides closed.
+  const viewKey = sheet === 'about' ? 'about' : selected ? `area:${selected}` : null
+  const [shownKey, setShownKey] = useState(viewKey)
+  if (viewKey && viewKey !== shownKey) setShownKey(viewKey)
+  const drawerOpen = viewKey !== null
+
+  if (state.status === 'loading') {
+    return (
+      <StatusPage title="Loading reported-incident data">
+        <p>
+          Fetching monthly history from {monthLabel(FIRST_MONTH)} to {monthLabel(DATA_THROUGH)}, the{' '}
+          {monthLabel(FORECAST_MONTH)} forecast and the neighbourhood boundaries.
+        </p>
+      </StatusPage>
+    )
+  }
+  if (state.status === 'error') {
+    return (
+      <StatusPage title={state.error?.summary ?? 'The data could not be loaded.'}>
+        <p>Check your connection and try again.</p>
+        <p className="status__detail">{String(state.error?.message ?? state.error)}</p>
+        <button type="button" className="btn btn--primary" onClick={retry}>
+          Try again
+        </button>
+      </StatusPage>
+    )
+  }
+  if (state.status === 'empty') {
+    return (
+      <StatusPage title="The data files are empty">
+        <p>They loaded but contain no months or forecasts. Check the files in public/data or the API, then reload.</p>
+        <button type="button" className="btn btn--primary" onClick={retry}>
+          Reload
+        </button>
+      </StatusPage>
+    )
+  }
+
   const data = state.data
-  const showNone =
-    state.status === 'ready' &&
-    [...AREA_BY_NAME.keys()].some((n) => (recordFor(data, mode, month, n)?.tier ?? 'none') === 'none')
+  const shownArea = shownKey?.startsWith('area:') ? shownKey.slice(5) : null
 
   return (
-    <div className="app">
-      <header className="header">
-        <div className="brand">
-          <svg className="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
-            <rect x="3" y="3" width="12" height="12" rx="2" fill={TIERS.below_typical.fill} />
-            <rect x="17" y="3" width="12" height="12" rx="2" fill={TIERS.typical.fill} />
-            <rect x="3" y="17" width="12" height="12" rx="2" fill={TIERS.typical.fill} />
-            <rect x="17" y="17" width="12" height="12" rx="2" fill={TIERS.above_typical.fill} />
-          </svg>
-          <h1>{APP_NAME}</h1>
-        </div>
-        <p className="tagline">{TAGLINE}</p>
-        <p className="data-note">{DATA_NOTE}</p>
-      </header>
-
-      <main>
-        {state.status === 'loading' && (
-          <StatusCard title="Loading reported-incident data">
-            <p>Fetching 24 years of monthly history, the October 2026 forecast and the neighbourhood boundaries.</p>
-            <div className="status__bar" aria-hidden="true" />
-          </StatusCard>
-        )}
-        {state.status === 'error' && (
-          <StatusCard title="The data could not be loaded">
-            <p>{String(state.error?.message ?? state.error)}</p>
-            <button type="button" className="btn btn--primary" onClick={retry}>
-              Try again
-            </button>
-          </StatusCard>
-        )}
-        {state.status === 'empty' && (
-          <StatusCard title="No data available">
-            <p>The data files loaded but contain no months or forecasts. Check the files in public/data or the API.</p>
-            <button type="button" className="btn btn--primary" onClick={retry}>
-              Reload
-            </button>
-          </StatusCard>
-        )}
-        {state.status === 'ready' && (
-          <>
-            <Controls mode={mode} onMode={setMode} month={month} onMonth={setMonth} months={data.months} />
-            <div className="workspace">
-              <section className="map-wrap" aria-label="Map of Vancouver neighbourhoods">
-                <MapView data={data} mode={mode} month={month} selected={selected} onSelect={onSelect} legendRef={legendRef} />
-                <Legend mode={mode} showNone={showNone} ref={legendRef} />
-              </section>
-              <DetailPanel data={data} mode={mode} month={month} selected={selected} onSelect={onSelect} />
-            </div>
-          </>
-        )}
-        <About />
-      </main>
+    <div className={drawerOpen ? 'app has-drawer' : 'app'}>
+      <MapStage
+        data={data}
+        mode={mode}
+        month={month}
+        selected={selected}
+        onSelect={onSelect}
+        drawerOpen={drawerOpen}
+        areaSelectRef={areaSelectRef}
+        controls={{
+          mode,
+          onMode,
+          month,
+          onMonth,
+          months,
+          playing,
+          onPlay,
+          onAbout,
+          aboutOpen: sheet === 'about',
+          aboutRef: aboutButtonRef,
+        }}
+      />
+      <Drawer
+        open={drawerOpen}
+        label={shownKey === 'about' ? 'How this works' : 'Neighbourhood details'}
+        onClose={closeDrawer}
+      >
+        {shownKey === 'about' && <HowItWorks headingRef={sheetHeadingRef} />}
+        {shownArea && <AreaDetail data={data} mode={mode} month={month} name={shownArea} />}
+      </Drawer>
     </div>
   )
 }

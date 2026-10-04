@@ -1,4 +1,4 @@
-import { HORIZON_MONTHS, SPARK_MONTHS } from './config.js'
+import { HORIZON_MONTHS, SPARK_MONTHS, TIERS } from './config.js'
 import { fmtNum, monthLabel } from './format.js'
 
 const W = 320
@@ -10,7 +10,7 @@ const PAD = { l: 4, r: 8, t: 8, b: 6 }
  * Historical: the window ends at (or, early in the record, contains) the selected month, which is marked.
  * Forecast: the last 36 complete months, then the forecast point with its uncertainty range.
  */
-export default function Sparkline({ series, month, forecast }) {
+export default function Sparkline({ series, month, forecast, tier }) {
   if (!series?.length) return null
   const idx = forecast ? series.length - 1 : series.findIndex((r) => r.month === month)
   if (idx < 0) return null
@@ -24,7 +24,6 @@ export default function Sparkline({ series, month, forecast }) {
   const y = (v) => H - PAD.b - (v / max) * (H - PAD.t - PAD.b)
 
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.weighted_index).toFixed(1)}`).join('')
-  const area = `${line}L${x(pts.length - 1).toFixed(1)},${H - PAD.b}L${x(0)},${H - PAD.b}Z`
   const mark = pts[markIdx]
   const fx = x(slots)
   const first = pts[0].month
@@ -37,20 +36,36 @@ export default function Sparkline({ series, month, forecast }) {
     <figure className="spark">
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} className="spark__svg">
         <line x1={PAD.l} x2={W - PAD.r} y1={H - PAD.b} y2={H - PAD.b} className="spark__axis" />
-        <path d={area} className="spark__area" />
         <path d={line} className="spark__line" />
         {forecast ? (
           <g className="spark__forecast">
+            <rect
+              x={fx - 5}
+              width={10}
+              y={y(forecast.high)}
+              height={Math.max(1, y(forecast.low) - y(forecast.high))}
+              rx={2}
+              className="spark__band"
+            />
             <line x1={x(pts.length - 1)} y1={y(mark.weighted_index)} x2={fx} y2={y(forecast.value)} strokeDasharray="3 3" />
-            <line x1={fx} x2={fx} y1={y(forecast.low)} y2={y(forecast.high)} />
-            <line x1={fx - 4} x2={fx + 4} y1={y(forecast.low)} y2={y(forecast.low)} />
-            <line x1={fx - 4} x2={fx + 4} y1={y(forecast.high)} y2={y(forecast.high)} />
-            <circle cx={fx} cy={y(forecast.value)} r="3.5" className="spark__hollow" />
+            <circle
+              cx={fx}
+              cy={y(forecast.value)}
+              r="4"
+              className="spark__dot"
+              style={{ fill: TIERS[tier]?.hatch ? undefined : TIERS[tier]?.fill }}
+            />
           </g>
         ) : (
           <g>
             <line x1={x(markIdx)} x2={x(markIdx)} y1={PAD.t} y2={H - PAD.b} className="spark__guide" />
-            <circle cx={x(markIdx)} cy={y(mark.weighted_index)} r="3.5" className="spark__dot" />
+            <circle
+              cx={x(markIdx)}
+              cy={y(mark.weighted_index)}
+              r="4"
+              className="spark__dot"
+              style={{ fill: TIERS[tier]?.hatch ? undefined : TIERS[tier]?.fill }}
+            />
           </g>
         )}
       </svg>

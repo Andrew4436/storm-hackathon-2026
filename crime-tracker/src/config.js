@@ -1,36 +1,52 @@
 // App-wide constants. Rename the app here; nothing else hard-codes the name.
 export const APP_NAME = 'NeighbourCast'
-export const TAGLINE =
-  "Reported-incident activity in Vancouver's 24 police neighbourhoods, month by month, with a forecast for October 2026."
-export const DATA_NOTE = 'VPD GeoDASH open data through Aug 2026 · not affiliated with VPD'
+export const QUESTION = 'Is this month unusual for this place?'
+export const TAGLINE = "Reported incidents in Vancouver's 24 neighbourhoods, compared with each one's own past."
 
 export const FIRST_MONTH = '2003-01'
-export const DATA_THROUGH = '2026-08' // last complete month; 2026-09 is partial
+export const DATA_THROUGH = '2026-08' // last complete month
+// The month the VPD extract stops part-way through (is_partial = 1), or null if it ends on a month boundary.
 export const PARTIAL_MONTH = '2026-09'
-export const FORECAST_MONTH = '2026-10'
+export const EXTRACT_END = '2026-09-25' // last day in the VPD extract
+export const PARTIAL_SHARE_PCT = 70 // how much of a normal month the partial month holds
+export const FORECAST_MONTH = '2026-10' // also names the static file: public/data/forecast_<FORECAST_MONTH>.json
 export const HORIZON_MONTHS = 2
+// Held-out evaluation behind "How well the forecast does" (from the ML team's evaluation report).
+export const EVAL_FROM = '2025-01'
+export const EVAL_TO = '2026-08'
+export const EVAL_GAIN_PCT = 4 // error reduction of the shipped Poisson GLM against the 12-month average
 export const SPARK_MONTHS = 36
+export const MINI_SPARK_MONTHS = 12
 // Trailing window behind an area's "typical level" (tiers and pct_vs_typical).
 export const TIER_WINDOW_MONTHS = 36
+// Playback speed for "Play months", in milliseconds per month.
+export const PLAY_INTERVAL_MS = 350
 
-// Diverging two-hue palette with a neutral midpoint. Colour-blind friendly, no red.
+// Tier colours. Keep in sync with the --tier-* tokens in index.css (Leaflet needs literal values).
 // Text is never coloured by tier: a swatch carries the colour, a label carries the meaning.
 export const TIERS = {
-  below_typical: { label: 'Below typical', fill: '#4C78A8' },
-  typical: { label: 'Typical', fill: '#BFBFBF' },
-  above_typical: { label: 'Above typical', fill: '#E0863C' },
-  insufficient_data: { label: 'Insufficient data', fill: '#EDEDED', stroke: '#8A8A8A', dashed: true },
-  none: { label: 'Not enough history', fill: '#F4F4F4', stroke: '#B8B8B8' },
+  below_typical: { label: 'Below typical', short: 'below', fill: '#4FB3AC' },
+  typical: { label: 'Typical', short: 'typical', fill: '#7A8699' },
+  above_typical: { label: 'Above typical', short: 'above', fill: '#E7A64E' },
+  insufficient_data: { label: 'Insufficient data', short: 'with insufficient data', fill: '#A6B2C5', hatch: true },
+  none: { label: 'Not enough history', short: 'without enough history', fill: '#33415C' },
 }
 export const LEGEND_ORDER = ['below_typical', 'typical', 'above_typical', 'insufficient_data']
 
+// Id of the SVG hatch pattern used to fill "insufficient data" shapes (defined once in MapView).
+export const HATCH_ID = 'nc-hatch'
+
 export const MAP_STYLE = {
-  fillOpacity: 0.72,
-  stroke: '#FFFFFF',
-  weight: 1.25,
-  selectedStroke: '#1F2933',
+  fillOpacity: 0.78,
+  hoverFillOpacity: 0.95,
+  dimFillOpacity: 0.55,
+  stroke: '#0E1726',
+  strokeOpacity: 0.6,
+  weight: 1,
+  hoverStroke: '#EEF2F7',
+  hoverWeight: 1.5,
+  selectedStroke: '#EEF2F7',
   selectedWeight: 2.5,
-  hoverWeight: 2,
 }
 
 export const LIMITATIONS =

@@ -1,25 +1,51 @@
+/* NeighbourCast: one deliberate dark theme, Vancouver harbour at night. */
 :root {
-  --ink: #1f2933;
-  --ink-2: #3e4c59;
-  --muted: #616e7c;
-  --line: #e4e7eb;
-  --line-strong: #cbd2d9;
-  --bg: #f7f7f5;
-  --surface: #ffffff;
-  --surface-2: #f2f3f1;
-  --focus: #1f2933;
-  --radius: 10px;
-  --radius-sm: 6px;
-  --shadow: 0 1px 2px rgba(31, 41, 51, 0.06), 0 4px 16px rgba(31, 41, 51, 0.06);
-  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --gutter: 32px;
+  /* Surfaces */
+  --ink-900: #0e1726; /* deep harbour, page base */
+  --ink-800: #152036; /* drawer, control bar, cards */
+  --ink-700: #1f2d47; /* borders, dividers, tracks */
+  --ink-800-frost: rgba(21, 32, 54, 0.8);
+  --ink-900-frost: rgba(14, 23, 38, 0.8); /* map attribution strip */
+  --line: rgba(166, 178, 197, 0.28); /* control outlines that stay visible on frosted surfaces */
+
+  /* Text: fog-100 on ink-800 is 14.5:1, fog-400 on ink-800 is 7.6:1 */
+  --fog-100: #eef2f7;
+  --fog-400: #a6b2c5;
+  --fog-wash: rgba(238, 242, 247, 0.16); /* fog-100 at 16%: uncertainty bands */
+  --fog-edge: rgba(238, 242, 247, 0.35); /* fog-100 at 35%: band outline */
+
+  /* Tiers: only on map fills, swatches, the pulse strip and chips. Keep in sync with config.js. */
+  --tier-below: #4fb3ac;
+  --tier-typical: #7a8699;
+  --tier-above: #e7a64e;
+  --tier-none: #33415c;
+  --tier-insufficient: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='%23152036'/%3E%3Cpath d='M-1 1l2-2M0 6l6-6M5 7l2-2' stroke='%23A6B2C5' stroke-width='1.2'/%3E%3C/svg%3E");
+
+  --focus: #ffd166;
+
+  /* Shape */
+  --radius: 12px; /* every floating surface */
+  --radius-chip: 999px;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --gutter: 16px;
+  --drawer-w: 400px;
+
+  /* Type: 13 / 15 / 17 / 22 / 30 / 44 */
+  --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --sans: 'Public Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fs-13: 13px;
+  --fs-15: 15px;
+  --fs-17: 17px;
+  --fs-22: 22px;
+  --fs-30: 30px;
+  --fs-44: 44px;
 
   font-family: var(--sans);
-  font-size: 16px;
+  font-size: var(--fs-15);
   line-height: 1.5;
-  color: var(--ink);
-  background: var(--bg);
-  color-scheme: light;
+  color: var(--fog-100);
+  background: var(--ink-900);
+  color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -34,7 +60,7 @@
 html,
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--ink-900);
   overflow-x: hidden;
 }
 
@@ -50,7 +76,7 @@ figure {
 }
 
 a {
-  color: var(--ink);
+  color: var(--fog-100);
   text-underline-offset: 2px;
 }
 
@@ -66,14 +92,22 @@ input {
   outline-offset: 2px;
 }
 
-@media (max-width: 768px) {
-  :root {
-    --gutter: 16px;
-  }
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     animation: none !important;
     transition: none !important;
   }
