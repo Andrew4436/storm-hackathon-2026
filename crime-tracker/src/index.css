@@ -1,0 +1,114 @@
+/* NeighbourCast: one deliberate dark theme, Vancouver harbour at night. */
+:root {
+  /* Surfaces */
+  --ink-900: #0e1726; /* deep harbour, page base */
+  --ink-800: #152036; /* drawer, control bar, cards */
+  --ink-700: #1f2d47; /* borders, dividers, tracks */
+  --ink-800-frost: rgba(21, 32, 54, 0.8);
+  --ink-900-frost: rgba(14, 23, 38, 0.8); /* map attribution strip */
+  --line: rgba(166, 178, 197, 0.28); /* control outlines that stay visible on frosted surfaces */
+
+  /* Text: fog-100 on ink-800 is 14.5:1, fog-400 on ink-800 is 7.6:1 */
+  --fog-100: #eef2f7;
+  --fog-400: #a6b2c5;
+  --fog-wash: rgba(238, 242, 247, 0.16); /* fog-100 at 16%: uncertainty bands */
+  --fog-edge: rgba(238, 242, 247, 0.35); /* fog-100 at 35%: band outline */
+
+  /* Tiers: only on map fills, swatches and chips. Keep in sync with config.js. */
+  --tier-below: #4fb3ac;
+  --tier-typical: #7a8699;
+  --tier-above: #e7a64e;
+  --tier-none: #33415c;
+  --tier-insufficient: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='%23152036'/%3E%3Cpath d='M-1 1l2-2M0 6l6-6M5 7l2-2' stroke='%23A6B2C5' stroke-width='1.2'/%3E%3C/svg%3E");
+
+  --focus: #ffd166;
+
+  /* Shape */
+  --radius: 12px; /* every floating surface */
+  --radius-chip: 999px;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --gutter: 16px;
+  --drawer-w: 400px;
+
+  /* Type: 13 / 15 / 17 / 22 / 30 / 44 */
+  --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --sans: 'Public Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fs-13: 13px;
+  --fs-15: 15px;
+  --fs-17: 17px;
+  --fs-22: 22px;
+  --fs-30: 30px;
+  --fs-44: 44px;
+
+  font-family: var(--sans);
+  font-size: var(--fs-15);
+  line-height: 1.5;
+  color: var(--fog-100);
+  background: var(--ink-900);
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--ink-900);
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+a {
+  color: var(--fog-100);
+  text-underline-offset: 2px;
+}
+
+button,
+select,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
