@@ -2,20 +2,25 @@ import { SPARK_MONTHS } from './config.js'
 import { recordFor } from './api.js'
 import {
   bandWords,
+  beyondWords,
+  comparisonNote,
   deviationText,
+  edgeWords,
   fmtNum,
   intervalPct,
   likelyText,
   monthLabel,
   numberWord,
-  usualLevelNote,
+  outcomeKey,
+  referenceLevel,
   wholePercents,
 } from './format.js'
 import { colourFor, fillFor } from './scale.js'
 import Sparkline from './Sparkline.jsx'
 import { Swatch } from './Swatch.jsx'
 
-const NO_REFERENCE = 'No usual level to compare with yet: an area needs 12 months of history first.'
+const NO_REFERENCE = 'No comparison level yet: an area needs 12 months of history first.'
+const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /** The dot colour for the sparklines: the area's place on the scale, or none (hatch and "no reference"). */
 const dotFill = (rec) => (rec?.kind === 'value' ? fillFor(rec) : null)
@@ -47,24 +52,29 @@ function RangeBar({ low, high, value, baseline }) {
 
 // Segments of the probability bar, left to right like the legend: below (teal), within (neutral), above (amber).
 const SEGMENTS = [
-  { key: 'below', v: -1, name: 'Below usual' },
-  { key: 'within', v: 0, name: null }, // named from the band: "Within 10%"
-  { key: 'above', v: 1, name: 'Above usual' },
+  { key: 'below', v: -1 },
+  { key: 'within', v: 0 },
+  { key: 'above', v: 1 },
 ]
 const MIN_LABEL_PCT = 12 // a segment narrower than this shows no number inside (the sentence below has it)
 
 /**
  * The three chances for the forecast month as one stacked bar, a key, and the sentence that carries the numbers:
- * "63% chance above its usual level for October, 15% chance below, 22% chance within 10% of it."
+ * "56% chance that October 2026 ends more than 10% above its October 2025 level, 19% chance more than 10% below,
+ * 25% chance within 10% of it."
  */
 function Chances({ rec, meta }) {
   const pct = wholePercents(rec.probs)
-  const month = monthLabel(meta.forecast_month).split(' ')[0]
+  const month = meta.forecast_month
   const band = bandWords(meta)
-  const withinName = band.charAt(0).toUpperCase() + band.slice(1).replace(/ of$/, '')
+  const edge = edgeWords(meta)
+  // Key names: "More than 10% below", "Within 10%", "More than 10% above".
+  const names = { below: capitalise(edge.below), within: capitalise(band.replace(/ of$/, '')), above: capitalise(edge.above) }
   return (
     <section className="chances">
-      <h3 className="detail__h3 chances__title">Chance of ending above or below its usual level</h3>
+      <h3 className="detail__h3 chances__title">
+        Chance of ending {beyondWords(meta)} {referenceLevel(meta, month)}
+      </h3>
       <div className="chances__bar" aria-hidden="true">
         {SEGMENTS.map((s) =>
           pct[s.key] > 0 ? (
@@ -82,15 +92,19 @@ function Chances({ rec, meta }) {
         {SEGMENTS.map((s) => (
           <li key={s.key}>
             <Swatch fill={colourFor(s.v)} />
-            {s.name ?? withinName}
+            {names[s.key]}
           </li>
         ))}
       </ul>
       <p className="detail__text chances__text">
-        {pct.above}% chance above its usual level for {month}, {pct.below}% chance below, {pct.within}% chance{' '}
-        {band} it.
+        {pct.above}% chance that {monthLabel(month)} ends {edge.above} {referenceLevel(meta, month)}, {pct.below}%
+        chance {edge.below}, {pct.within}% chance {band} it.
       </p>
-      {rec.likely && <p className="chances__likely">Most likely: {likelyText(rec.likely, meta)} ({Math.round(100 * Math.max(rec.probs?.above ?? 0, rec.probs?.below ?? 0, rec.probs?.within ?? 0))}%)</p>}
+      {rec.likely && (
+        <p className="chances__likely">
+          Most likely: {likelyText(rec.likely, meta, month)} ({pct[outcomeKey(rec.likely)]}%)
+        </p>
+      )}
     </section>
   )
 }
@@ -115,8 +129,8 @@ function HistoricalDetail({ data, name, month, rec }) {
       {rec.kind === 'none' && <p className="detail__text">{NO_REFERENCE}</p>}
       {rec.kind === 'value' && (
         <>
-          <p className="detail__text">{deviationText(rec.pct_vs_typical, meta)}.</p>
-          <p className="detail__note">{usualLevelNote(meta)}</p>
+          <p className="detail__text">{deviationText(rec.pct_vs_typical, meta, month)}.</p>
+          <p className="detail__note">{comparisonNote(meta)}</p>
         </>
       )}
       <h3 className="detail__h3">Severity-weighted activity, {SPARK_MONTHS} months</h3>
@@ -157,12 +171,14 @@ function ForecastDetail({ data, name, rec }) {
         <Chances rec={rec} meta={meta} />
       ) : rec.kind === 'value' && rec.pct_vs_typical != null ? (
         // An older forecast file without chances: the forecast's own deviation instead.
-        <p className="detail__text">The forecast is {deviationText(rec.pct_vs_typical, meta).replace(/^A/, 'a')}.</p>
+        <p className="detail__text">
+          The forecast is {deviationText(rec.pct_vs_typical, meta, meta.forecast_month).replace(/^A/, 'a')}.
+        </p>
       ) : (
         <p className="detail__text">{NO_REFERENCE}</p>
       )}
       <p className="detail__note">
-        {usualLevelNote(meta)} The chances come from how far past forecasts landed from what happened. The
+        {comparisonNote(meta)} The chances come from how far past forecasts landed from what happened. The
         12-month average is the simple baseline the forecast is tested against. The range covers{' '}
         {intervalPct(meta)}% of likely outcomes.
       </p>

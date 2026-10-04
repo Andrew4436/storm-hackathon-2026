@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from 'react'
 import { LABEL_INSUFFICIENT, LABEL_NONE, MINI_SPARK_MONTHS } from './config.js'
 import { recordFor } from './api.js'
-import { deviationShort, fmtNum, topChance } from './format.js'
+import { chanceShort, deviationShort, fmtNum } from './format.js'
 import { fillFor } from './scale.js'
 import { Swatch } from './Swatch.jsx'
 
@@ -39,18 +39,17 @@ function MiniSpark({ series, month, forecast }) {
 }
 
 /**
- * One line with the area's colour: in forecast mode the largest of the three chances ("Above usual: 72%"), in
- * historical mode how far the month was from its usual level ("15% above usual").
+ * One line with the area's colour: in forecast mode the largest of the three chances ("56% chance above Oct 2025
+ * level"), in historical mode how far the month was from the same month a year earlier ("15% above Jun 2023").
  */
-function Headline({ rec, mode, meta }) {
+function Headline({ rec, mode, month, meta }) {
   if (!rec) return null
+  const shown = mode === 'forecast' ? meta.forecast_month : month
   let text
   if (rec.kind === 'insufficient_data') text = LABEL_INSUFFICIENT
   else if (rec.kind === 'none') text = LABEL_NONE
-  else if (mode === 'forecast' && rec.probs) {
-    const top = topChance(rec.probs, rec.likely, meta)
-    text = `${top.label}: ${top.pct}%`
-  } else text = deviationShort(rec.pct_vs_typical)
+  else if (mode === 'forecast' && rec.probs) text = chanceShort(rec.probs, rec.likely, meta, shown)
+  else text = deviationShort(rec.pct_vs_typical, meta, shown)
   return (
     <p className="hover-card__line">
       <Swatch fill={fillFor(rec)} />
@@ -115,7 +114,7 @@ export default function HoverCard({ hover, data, mode, month, rightInset = 0 }) 
   return (
     <div className="hover-card" ref={ref} aria-hidden="true">
       <p className="hover-card__name">{name}</p>
-      <Headline rec={rec} mode={mode} meta={data.meta} />
+      <Headline rec={rec} mode={mode} month={month} meta={data.meta} />
       <Figures rec={rec} mode={mode} />
       <MiniSpark series={series} month={mode === 'forecast' ? data.meta.data_through : month} forecast={forecast} />
     </div>

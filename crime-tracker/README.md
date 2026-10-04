@@ -3,18 +3,21 @@
 A map of Vancouver's 24 VPD neighbourhoods. **Historical** mode shows reported-incident activity for any complete
 month from `FIRST_MONTH` (`src/config.js`) to the last complete month (`data_through` in `public/data/meta.json`);
 **Forecast** mode shows the forecast for `forecast_month` from the same file, with an uncertainty range
-(`interval_level`, 80% today). Areas are coloured on **one continuous scale** against each area's own usual level,
-never against other areas (the usual level today is the same month one year earlier, from `tier_window_months` and
-`tier_reference`; the band around it is `tier_thresholds_pct`, ±10%):
+(`interval_level`, 80% today). Areas are coloured on **one continuous scale** against each area's own comparison
+level, never against other areas. With `tier_reference: "seasonal"` and `tier_window_months: 12` (today's
+`meta.json`) the comparison level for any month is exactly that area's severity-weighted activity in the same calendar
+month one year earlier: October 2025 for the October 2026 forecast, June 2023 for June 2024. The band around it is
+`tier_thresholds_pct`, ±10%:
 
-- **Forecast:** the colour is `p_above - p_below`, the balance of the chances that the month ends above or below
-  the band, so amber means above is likely, teal below is likely, grey even odds. The drawer shows all three chances.
+- **Forecast:** the colour is `p_above - p_below`, the balance of the chances that the month ends more than 10% above
+  or more than 10% below the comparison level, so amber means above is likely, teal below is likely, grey even odds.
+  The drawer shows all three chances.
 - **Historical:** the colour is the month's actual deviation, `pct_vs_typical / 30` (30% either way is full colour).
 
 Data: VPD GeoDASH open data. Not affiliated with the Vancouver Police Department.
 
 **Where the numbers come from.** The performance block ("How well does it forecast?" in How this works) and every
-label built from the pipeline (last complete month, forecast month, horizon, model name, what the usual level is and
+label built from the pipeline (last complete month, forecast month, horizon, model name, the comparison month and
 the band around it, the range level, the chances) come from `public/data/meta.json` and the forecast file. That file is a copy of `ml/outputs/meta.json`, made
 by `npm run sync-data`; nothing in the app recomputes or hard-codes an evaluation figure. `META_DEFAULTS` in
 `src/config.js` is a fallback used only when the file or a field is missing or invalid. One exception: the held-out
@@ -41,14 +44,22 @@ The view is kept in the URL query, so a demo can be bookmarked:
 - The **control bar** sits at the top left of the map (on phones, under the map). Its first row holds
   **Historical / Forecast**, the month being shown, **How this works** and the **neighbourhood list**; its second row
   holds **Play months**, the previous and next arrows and the month scrubber.
-- The **legend** sits directly under the control bar, left-aligned with it: a 220 px gradient bar built from the same
-  colour function as the map (`colourFor` in `src/scale.js`), with text labels at both ends and the middle.
-  Forecast: **Likely below usual | Even | Likely above usual**, with ticks at -0.8 / 0 / +0.8 captioned **90% /
-  50/50 / 90%** (a 90% chance one way). Historical: **30% below usual | Usual | 30% above usual**. Next to it, a
-  hatched swatch for **Insufficient data** and, only while some area in the view has no usual level yet (the first 12
-  months of the record), a flat swatch for **No reference yet**. The legend keeps the same height in both modes. On
-  phones the three labels sit on one line above a full-width bar. The map fits the city into the space the bar, the
-  legend and the zoom control leave free.
+- The **legend** sits directly under the control bar, left-aligned with it. A title names exactly what the colour
+  compares, then a 220 px gradient bar built from the same colour function as the map (`colourFor` in
+  `src/scale.js`) with short labels at both ends and, on a small tick, under its middle:
+  - Forecast: "Chance that October 2026 ends more than 10% above or below this area's October 2025 level", bar
+    labelled **Quieter | Even odds | Busier** (the ends of the bar are about a 90% chance one way).
+  - Historical: "Severity-weighted activity in June 2024 compared with June 2023" (the selected month and the same
+    month a year earlier), bar labelled **Quieter | Same | Busier** (full colour at 30% lower or higher). In the
+    record's first year the title says there is nothing to compare with yet.
+
+  Every month and the 10% band come from `meta.json` (`forecast_month`, `tier_thresholds_pct`) and the month on
+  show, through `referenceLabel()` and `bandPct()` in `src/format.js`. Next to the bar, a hatched swatch for
+  **Insufficient data** and, only while some area in the view has nothing to compare with (the first 12 months of
+  the record), a flat swatch for **No reference yet**. At desktop widths the title wraps to at most two lines
+  (480 px) and always keeps room for two, so the legend keeps the same height in both modes and every month. On
+  phones the title wraps to the panel width, the end labels sit above the ends of a full-width bar and the middle
+  label under it. The map fits the city into the space the bar, the legend and the zoom control leave free.
 - **Historical / Forecast** switch between past months and the forecast month. In Historical mode the scrubber and
   the arrows pick any complete month, and **Play months** steps forward one month at a time (`PLAY_INTERVAL_MS` in
   `src/config.js`) and stops at the last month. Playback is off in Forecast mode.
@@ -57,15 +68,18 @@ The view is kept in the URL query, so a demo can be bookmarked:
   its own history, and a chart of recent months. On phones the drawer is a **bottom sheet**. **Close** or Escape closes
   it.
   - Forecast: the forecast number, the incident estimate, the range bar with the 12-month baseline, then the
-    **chances**: a stacked bar (below / within / above, teal / grey / amber, percentages inside wide segments, a key
-    under it) and the sentence "63% chance above its usual level for October, 15% chance below, 22% chance within 10%
-    of it." followed by "Most likely: above its usual level". The percentages are rounded to add up to 100; the month
-    comes from `forecast_month`, the band from `tier_thresholds_pct`, "most likely" from `most_likely`.
-  - Historical: the month's figures and its actual deviation ("15% above its usual level for the time of year"). No
-    chances.
+    **chances**: a stacked bar (more than 10% below / within 10% / more than 10% above, teal / grey / amber,
+    percentages inside wide segments, a key under it) and the sentence "56% chance that October 2026 ends more than
+    10% above its October 2025 level, 19% chance more than 10% below, 25% chance within 10% of it." followed by
+    "Most likely: more than 10% above October 2025 (56%)". The percentages are rounded to add up to 100; the months
+    come from `forecast_month`, the band from `tier_thresholds_pct`, "most likely" from `most_likely`.
+  - Historical: the month's figures and its actual deviation against the same month a year earlier ("15% above June
+    2023", or "About the same as June 2023" within 1%). No chances.
+  - Under the sentence: "The comparison level is this area's severity-weighted activity in the same month one year
+    earlier." (with another `tier_reference` or window, a generic description of the comparison level instead).
   - Insufficient data: one sentence and the chart, no bar.
-- **Hover card** (mouse only): the area, one line with its colour and either the largest chance ("Above usual: 72%")
-  or the month's deviation ("15% above usual"), the figures and a 12-month mini chart.
+- **Hover card** (mouse only): the area, one line with its colour and either the largest chance ("56% chance above
+  Oct 2025 level") or the month's deviation ("15% above Jun 2023"), the figures and a 12-month mini chart.
 - **How this works** opens the same drawer with the method, the limitations, **How well does it forecast?** (the
   evaluation figures from `meta.json`) and the sources.
 
@@ -89,7 +103,7 @@ its `forecast_month`) and uses it for:
 | Key | Used for |
 |---|---|
 | `data_through`, `forecast_month`, `horizon_months` | Last month on the timeline, the forecast month and file name, "N months ahead", the month in the chances sentence |
-| `tier_window_months`, `tier_thresholds_pct` `[lo, hi]`, `tier_reference` (`trailing_mean` or `seasonal`) | How the usual level and the band around it are described ("within 10% of it"; area detail, hover card, How this works). With `seasonal` it reads as the area's usual level for the time of year |
+| `tier_window_months`, `tier_thresholds_pct` `[lo, hi]`, `tier_reference` (`trailing_mean` or `seasonal`) | What each month is compared with and the band around it (legend title, area detail, hover card, How this works). `seasonal` with a 12-month window names the same month one year earlier ("October 2025"; `referenceLabel()` in `src/format.js`); any other combination falls back to a generic phrase ("its usual level for that time of year, from the previous N complete months", or "its average over the previous N complete months" for `trailing_mean`). The band is "more than 10% above / below" and "within 10% of" (`bandPct()`) |
 | `interval_level` | "The range covers 80% of likely outcomes" |
 | `model` | The model name in How this works (`MODEL_NAMES` in `src/config.js`; other ids are shown as written) |
 | `tier_mode` | `"probabilistic"`: the forecast file carries chances. Informational; the app colours by the chances whenever a record has them |
@@ -110,8 +124,8 @@ and `most_likely` (`above_typical`, `below_typical`, `typical` or `insufficient_
 coloured by the forecast's own `pct_vs_typical`, like a past month, and the drawer shows that deviation instead of the
 chances.
 
-History records (`history.json`) are read for `weighted_index`, `incident_count`, `pct_vs_typical` (`null` where there
-is no usual level yet: shown as "No reference yet") and `relative_activity_tier` (only to spot `insufficient_data`,
+History records (`history.json`) are read for `weighted_index`, `incident_count`, `pct_vs_typical` (the change against
+the same month one year earlier; `null` where there is nothing to compare with yet: shown as "No reference yet") and `relative_activity_tier` (only to spot `insufficient_data`,
 shown hatched). `src/api.js` gives every record a `kind` (`value`, `insufficient_data` or `none`) and `v`, its place on
 the scale; `src/scale.js` holds the mapping.
 
@@ -177,7 +191,7 @@ VITE_BASE=/storm-hackathon-2026/ npm run build
 | `src/index.css` | Design tokens (ink, fog, the scale stops and off-scale fills, type scale, radii) and base styles |
 | `src/areas.js` | The 24 VPD names, polygon names, marker positions, URL slugs |
 | `src/api.js` | Loads `meta.json` (checked field by field) and the three data files under the base path, and indexes them |
-| `src/format.js` | Numbers, months, and the wording built from `meta.json` (usual level, band, chances, range, model name, scores) |
+| `src/format.js` | Numbers, months, and the wording built from `meta.json` (the comparison month via `referenceLabel()`, the band via `bandPct()`, chances, range, model name, scores) |
 | `src/App.jsx` | View state (mode, month, area, playback), URL sync, loading and error states, drawer |
 | `src/MapStage.jsx` | The full-bleed map and the panels floating over it; owns hover state; measures what the fit avoids (control bar, legend, zoom control, drawer) |
 | `src/MapView.jsx` | Leaflet map: one GeoJSON layer plus two circle markers, restyled with `setStyle`; panel- and drawer-aware fit |

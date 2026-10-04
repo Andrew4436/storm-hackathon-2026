@@ -77,7 +77,7 @@ export default function MapStage({ data, mode, month, selected, onSelect, drawer
     <main className="stage">
       <div className="stage__top" ref={topRef}>
         <ControlBar {...controls} selected={selected} onSelect={onSelect} />
-        <Legend mode={mode} showNone={showNone} />
+        <Legend mode={mode} meta={data.meta} month={month} showNone={showNone} />
       </div>
 
       <div className="stage__map" onMouseLeave={clearHover}>

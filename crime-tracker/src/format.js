@@ -30,49 +30,92 @@ export const numberWord = (n) => WORDS[n] ?? fmtNum(n)
 
 /* ---------- Wording built from meta.json (see META_DEFAULTS in config.js) ---------- */
 
-const seasonal = (meta) => meta.tier_reference === 'seasonal'
+/** "2025-10" from "2026-10": the same calendar month one year earlier. */
+export function yearEarlier(key) {
+  const [y, m] = key.split('-')
+  return `${Number(y) - 1}-${m}`
+}
 
-/** "An area's usual level is worked out from the same time of year in the previous 12 complete months." */
-export function usualLevelNote(meta) {
+/**
+ * True when a month's comparison level is exactly the same calendar month one year earlier: a seasonal
+ * reference (tier_reference "seasonal") over a 12-month window holds one month of each kind, so October 2026 is
+ * compared with October 2025 and June 2024 with June 2023.
+ */
+export const sameMonthLastYear = (meta) => meta.tier_reference === 'seasonal' && meta.tier_window_months === 12
+
+/**
+ * The comparison level when it is not one named month, owned by `owner`: "its usual level for that time of year,
+ * from the previous 24 complete months" (seasonal) or "its average over the previous 12 complete months".
+ */
+function genericReference(meta, owner = 'its') {
   const w = meta.tier_window_months
-  return seasonal(meta)
-    ? `An area’s usual level is worked out from the same time of year in the previous ${w} complete months.`
-    : `An area’s usual level is its average over the previous ${w} complete months.`
+  return meta.tier_reference === 'seasonal'
+    ? `${owner} usual level for that time of year, from the previous ${w} complete months`
+    : `${owner} average over the previous ${w} complete months`
 }
 
-/** "its usual level for the time of year" (seasonal) or "its 12-month average". */
-const usualRef = (meta) =>
-  seasonal(meta) ? 'its usual level for the time of year' : `its ${meta.tier_window_months}-month average`
-
-/** "15% above its usual level for the time of year" from pct_vs_typical (a realised or forecast deviation). */
-export function deviationText(pct, meta) {
-  const shown = nf.format(Math.abs(Math.round(pct)))
-  if (shown === '0') return `About the same as ${usualRef(meta)}`
-  return `${shown}% ${pct > 0 ? 'above' : 'below'} ${usualRef(meta)}`
+/**
+ * What a month is compared with: "October 2025" for "2026-10" when the reference is the same month one year
+ * earlier (sameMonthLastYear), otherwise the generic phrase. `short` gives "Oct 2025" (or "usual") for the hover
+ * card; `owner` replaces "its" in the generic phrase ("this area’s").
+ */
+export function referenceLabel(meta, monthStr, { short = false, owner = 'its' } = {}) {
+  if (sameMonthLastYear(meta)) return monthLabel(yearEarlier(monthStr), short)
+  return short ? 'usual' : genericReference(meta, owner)
 }
 
-/** "15% above usual" for the hover card. */
-export function deviationShort(pct) {
-  const shown = nf.format(Math.abs(Math.round(pct)))
-  return shown === '0' ? 'About usual' : `${shown}% ${pct > 0 ? 'above' : 'below'} usual`
+/** The comparison level as a noun phrase: "its October 2025 level", "this area’s October 2025 level". */
+export function referenceLevel(meta, monthStr, owner = 'its') {
+  return sameMonthLastYear(meta) ? `${owner} ${referenceLabel(meta, monthStr)} level` : genericReference(meta, owner)
 }
 
-/** The band around the usual level as two numbers: "10" and "10" for [-10, 10]. */
-function bounds(meta) {
+/** "The comparison level is this area’s severity-weighted activity in the same month one year earlier." */
+export function comparisonNote(meta, owner = 'this area’s') {
+  return sameMonthLastYear(meta)
+    ? `The comparison level is ${owner} severity-weighted activity in the same month one year earlier.`
+    : `The comparison level is ${genericReference(meta, owner)}.`
+}
+
+/** "15% above June 2023", or "About the same as June 2023" within 1%, from a deviation in percent. */
+function deviation(pct, ref) {
+  if (Math.abs(pct) < 1) return ref === 'usual' ? 'About usual' : `About the same as ${ref}`
+  return `${nf.format(Math.abs(Math.round(pct)))}% ${pct > 0 ? 'above' : 'below'} ${ref}`
+}
+
+/** "15% above June 2023" from pct_vs_typical (a realised or forecast deviation) for the month monthStr. */
+export const deviationText = (pct, meta, monthStr) => deviation(pct, referenceLabel(meta, monthStr))
+
+/** "15% above Jun 2023" for the hover card. */
+export const deviationShort = (pct, meta, monthStr) => deviation(pct, referenceLabel(meta, monthStr, { short: true }))
+
+/**
+ * The band around the comparison level in percent: 10 for tier_thresholds_pct [-10, 10]. `side` 'below' gives
+ * the lower edge, as a positive number.
+ */
+export function bandPct(meta, side = 'above') {
   const [lo, hi] = meta.tier_thresholds_pct
-  return [nfUpTo1.format(Math.abs(lo)), nfUpTo1.format(hi)]
+  return side === 'below' ? Math.abs(lo) : hi
 }
 
-/** "within 10% of" or "between 5% below and 10% above": the band, before "it" / "its usual level". */
+/** The two edges of the band as text: ["10", "10"] for [-10, 10]. */
+const bounds = (meta) => [nfUpTo1.format(bandPct(meta, 'below')), nfUpTo1.format(bandPct(meta))]
+
+/** "within 10% of" or "between 5% below and 10% above": the band, before "it" or a reference. */
 export function bandWords(meta) {
   const [lo, hi] = bounds(meta)
   return lo === hi ? `within ${hi}% of` : `between ${lo}% below and ${hi}% above`
 }
 
-/** "more than 10% higher" / "more than 10% lower": what "above" and "below" mean. */
+/** "more than 10% above" / "more than 10% below": what the outcomes "above" and "below" mean. */
 export function edgeWords(meta) {
   const [lo, hi] = bounds(meta)
-  return { above: `more than ${hi}% higher`, below: `more than ${lo}% lower` }
+  return { above: `more than ${hi}% above`, below: `more than ${lo}% below` }
+}
+
+/** "more than 10% above or below" (or "more than 10% above or 5% below"), before a reference. */
+export function beyondWords(meta) {
+  const [lo, hi] = bounds(meta)
+  return lo === hi ? `more than ${hi}% above or below` : `more than ${hi}% above or ${lo}% below`
 }
 
 /** Whole percentages for {below, within, above} that add up to 100 (largest remainder). */
@@ -90,24 +133,28 @@ export function wholePercents(probs) {
   return Object.fromEntries(keys.map((k, i) => [k, out[i]]))
 }
 
-/** The most likely outcome in words: "above its usual level", "within 10% of its usual level". */
-export function likelyText(likely, meta) {
-  if (likely === 'above_typical') return 'above its usual level'
-  if (likely === 'below_typical') return 'below its usual level'
-  return `${bandWords(meta)} its usual level`
+const OUTCOME_KEYS = { above_typical: 'above', below_typical: 'below', typical: 'within' }
+
+/** 'above', 'below' or 'within' from most_likely ('above_typical', 'below_typical', 'typical'). */
+export const outcomeKey = (likely) => OUTCOME_KEYS[likely]
+
+/** The most likely outcome in words: "more than 10% above October 2025", "within 10% of October 2025". */
+export function likelyText(likely, meta, monthStr) {
+  const key = outcomeKey(likely)
+  const ref = referenceLabel(meta, monthStr)
+  return key === 'within' ? `${bandWords(meta)} ${ref}` : `${edgeWords(meta)[key]} ${ref}`
 }
 
 /**
- * The largest of the three chances as a short label for the hover card: {label: "Above usual", pct: 72}.
- * Ties go to the most likely outcome in the file.
+ * The largest of the three chances as one short line for the hover card: "56% chance above Oct 2025 level",
+ * "40% chance within 10% of Oct 2025 level". Ties go to the most likely outcome in the file.
  */
-export function topChance(probs, likely, meta) {
+export function chanceShort(probs, likely, meta, monthStr) {
   const pct = wholePercents(probs)
-  const pick = { above_typical: 'above', below_typical: 'below', typical: 'within' }[likely]
+  const pick = outcomeKey(likely)
   const key = ['above', 'below', 'within'].reduce((a, b) => (pct[b] > pct[a] || (pct[b] === pct[a] && b === pick) ? b : a))
-  const [lo, hi] = bounds(meta)
-  const label = { above: 'Above usual', below: 'Below usual', within: lo === hi ? `Within ${hi}% of usual` : 'Near usual' }
-  return { label: label[key], pct: pct[key] }
+  const ref = `${referenceLabel(meta, monthStr, { short: true })} level`
+  return `${pct[key]}% chance ${key === 'within' ? bandWords(meta) : key} ${ref}`
 }
 
 /** "0.171": a probability score (Brier, ranked probability score) with three decimals. */

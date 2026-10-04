@@ -12,6 +12,7 @@ import {
 } from './config.js'
 import {
   bandWords,
+  comparisonNote,
   dayLabel,
   edgeWords,
   fmtPct1,
@@ -21,7 +22,9 @@ import {
   monthLabel,
   numberWord,
   oneIn,
-  usualLevelNote,
+  referenceLabel,
+  referenceLevel,
+  sameMonthLastYear,
 } from './format.js'
 
 const monthName = (key) => monthLabel(key).split(' ')[0]
@@ -41,14 +44,15 @@ const Score = ({ v }) => <strong className="how__num">{fmtScore(v)}</strong>
  * How well the chances scored (evaluation.probabilistic): the calibration statement, the Brier score for
  * "above" and the ranked probability score, each against always using the base rate. Lower is better for both.
  */
-function probabilityLines(p) {
+function probabilityLines(p, meta) {
   if (!p) return []
   const lines = []
   if (p.statement) lines.push(<li key="calibration">{p.statement}</li>)
   if (p.brier_above != null && p.brier_above_baseline != null) {
     lines.push(
       <li key="brier">
-        For the chance of ending above usual: Brier score <Score v={p.brier_above} /> vs{' '}
+        For the chance of ending {edgeWords(meta).above} the comparison level: Brier score{' '}
+        <Score v={p.brier_above} /> vs{' '}
         <Score v={p.brier_above_baseline} /> for always using the base rate (lower is better).
       </li>,
     )
@@ -108,8 +112,8 @@ function Performance({ meta }) {
   if (e.tier_accuracy_pct != null) {
     lines.push(
       <li key="call">
-        Read as a single call (above, within or below usual), it was right <Num v={e.tier_accuracy_pct} /> of the
-        time
+        Read as a single call (the most likely of the three outcomes), it was right <Num v={e.tier_accuracy_pct} /> of
+        the time
         {e.tier_majority_baseline_pct != null ? (
           <>
             , against <Num v={e.tier_majority_baseline_pct} /> for always picking the most common outcome.
@@ -120,7 +124,7 @@ function Performance({ meta }) {
       </li>,
     )
   }
-  lines.push(...probabilityLines(e.probabilistic))
+  lines.push(...probabilityLines(e.probabilistic, meta))
   return (
     <section>
       <h3>How well does it forecast?</h3>
@@ -137,16 +141,16 @@ function Performance({ meta }) {
 function ProbabilitiesSection({ meta }) {
   const edge = edgeWords(meta)
   const method = PROBABILITY_METHODS[meta.probability_method]
+  const month = meta.forecast_month
+  const last = meta.data_through
   return (
     <section>
       <h3>Probabilities, not labels</h3>
       <p>
-        We do not sort areas into fixed groups. For the forecast month we estimate the chance that the month ends
-        above or below the area&rsquo;s usual level{meta.tier_reference === 'seasonal' ? ' for that time of year' : ''},
-        using how wrong past forecasts were: we
-        look at how far real months landed from what was forecast, and spread this forecast the same way. Above means{' '}
-        {edge.above} than the usual level, below means {edge.below}, and anything {bandWords(meta)} it counts as
-        within its usual range. {usualLevelNote(meta)}
+        We do not sort areas into fixed groups. For the forecast month, {monthLabel(month)}, we estimate three chances
+        for each area: that it ends {edge.above} {referenceLevel(meta, month)}, {edge.below} it, or {bandWords(meta)}{' '}
+        it. We use how wrong past forecasts were: we look at how far real months landed from what was forecast, and
+        spread this forecast the same way. {comparisonNote(meta, 'each area’s')}
         {method ? ` The chances come from ${method}.` : ''}
       </p>
       <p>
@@ -155,8 +159,11 @@ function ProbabilitiesSection({ meta }) {
         other. A busy area can be teal and a quiet one amber, because each is only compared with itself.
       </p>
       <p>
-        For past months the colour shows how far the month actually landed from its usual level, reaching full
-        strength at {HIST_SATURATE_PCT}% either way. Areas need 12 months of history before they get a colour.
+        For past months the colour shows how far the month&rsquo;s severity-weighted activity landed from the same
+        comparison level
+        {sameMonthLastYear(meta) ? ` (${monthLabel(last)} against ${referenceLabel(meta, last)}, for example)` : ''},
+        reaching full strength at {HIST_SATURATE_PCT}% either way. Areas need 12 months of history before they get a
+        colour.
       </p>
       <p>
         The forecast also gives a single number and an uncertainty range. The range is where the model expects{' '}
@@ -186,8 +193,8 @@ export default function HowItWorks({ meta, headingRef }) {
             Statistics Canada Crime Severity Index approach. The plain count of reported incidents sits beside it.
           </li>
           <li>
-            Colours each area against its own usual level, on one continuous scale. Areas are never ranked against
-            each other.
+            Colours each area against {sameMonthLastYear(meta) ? 'its own activity in the same month one year earlier' : 'its own past activity'},
+            on one continuous scale. Areas are never ranked against each other.
           </li>
           <li>
             Forecasts {monthLabel(meta.forecast_month)} for every area, {plural(meta.horizon_months, 'month')} ahead of
