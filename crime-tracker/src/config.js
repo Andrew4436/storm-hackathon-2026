@@ -1,5 +1,5 @@
 // App-wide constants. Rename the app here; nothing else hard-codes the name.
-export const APP_NAME = 'NeighbourCast'
+export const APP_NAME = 'Le-safety'
 
 export const FIRST_MONTH = '2003-01'
 // First month shown on the timeline: the first that can be compared with the same month a year earlier.

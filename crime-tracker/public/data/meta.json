@@ -1,5 +1,5 @@
 {
-  "app": "NeighbourCast",
+  "app": "Le-safety",
   "model": "poisson_glm",
   "model_description": "Poisson regression (log link) on each area's recent levels (last month, 3-, 6- and 12-month averages, same month last year, all as log1p) plus a calendar-month effect, fitted on 2010-2026 across all 24 neighbourhoods.",
   "data_through": "2026-08",

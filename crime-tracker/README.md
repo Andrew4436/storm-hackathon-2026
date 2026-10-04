@@ -1,4 +1,4 @@
-# NeighbourCast (frontend)
+# Le-safety (frontend)
 
 A map of Vancouver's 24 VPD neighbourhoods. **Historical** mode shows reported-incident activity for any complete
 month from `FIRST_MONTH` (`src/config.js`) to the last complete month (`data_through` in `public/data/meta.json`);
