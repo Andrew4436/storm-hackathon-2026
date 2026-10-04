@@ -1,0 +1,109 @@
+{
+    "neighbourhoods": [
+        {
+            "name": "West End",
+            "coordinates": "[49.2888, -123.1336]",
+            "radius": "200"
+        },
+        {
+            "name": "Downtown",
+            "coordinates": "[49.2827, -123.1207]",
+            "radius": "200"
+        },
+        {
+            "name": "Mount Pleasant",
+            "coordinates": "[49.2605, -123.1002]",
+            "radius": "200"
+        },
+        {
+            "name": "Kitsilano",
+            "coordinates": "[49.2684, -123.1656]",
+            "radius": "200"
+        },
+        {
+            "name": "Fairview",
+            "coordinates": "[49.2605, -123.1342]",
+            "radius": "200"
+        },
+        {
+            "name": "Grandview-Woodland",
+            "coordinates": "[49.2741, -123.0677]",
+            "radius": "200"
+        },
+        {
+            "name": "Hastings-Sunrise",
+            "coordinates": "[49.2831, -123.0450]",
+            "radius": "200"
+        },
+        {
+            "name": "Strathcona",
+            "coordinates": "[49.2781, -123.0883]",
+            "radius": "200"
+        },
+        {
+            "name": "Marpole",
+            "coordinates": "[49.2105, -123.1342]",
+            "radius": "200"
+        },
+        {
+            "name": "Oakridge",
+            "coordinates": "[49.2273, -123.1162]",
+            "radius": "200"
+        },
+        {
+            "name": "Kerrisdale",
+            "coordinates": "[49.2285, -123.1556]",
+            "radius": "200"
+        },
+        {
+            "name": "Dunbar-Southlands",
+            "coordinates": "[49.2450, -123.1850]",
+            "radius": "200"
+        },
+        {
+            "name": "Shaughnessy",
+            "coordinates": "[49.2483, -123.1444]",
+            "radius": "200"
+        },
+        {
+            "name": "South Cambie",
+            "coordinates": "[49.2483, -123.1162]",
+            "radius": "200"
+        },
+        {
+            "name": "Riley Park",
+            "coordinates": "[49.2483, -123.1002]",
+            "radius": "200"
+        },
+        {
+            "name": "Kensington-Cedar Cottage",
+            "coordinates": "[49.2483, -123.0677]",
+            "radius": "200"
+        },
+        {
+            "name": "Victoria-Fraserview",
+            "coordinates": "[49.2150, -123.0677]",
+            "radius": "200"
+        },
+        {
+            "name": "Killarney",
+            "coordinates": "[49.2150, -123.0350]",
+            "radius": "200"
+        },
+        {
+            "name": "Sunset",
+            "coordinates": "[49.2150, -123.1002]",
+            "radius": "200"
+        },
+        {
+            "name": "Arbutus Ridge",
+            "coordinates": "[49.2483, -123.1556]",
+            "radius": "200"
+        },
+        {
+            "name": "West Point Grey",
+            "coordinates": "[49.2684, -123.1950]",
+            "radius": "200"
+        }
+    ]
+}
