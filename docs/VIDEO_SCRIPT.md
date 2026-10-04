@@ -26,8 +26,8 @@
 - **Start state:** `/?mode=historical&month=2019-10`, with the drawer closed.
 - **Recording tool:** OBS Studio (display capture, 1080p, 30 fps), or Xbox Game Bar (Win+Alt+R records the active window).
 - **Editing:** Clipchamp, which is built into Windows 11, or any editor you know.
-- **Graphics for shots 7 and 8:** screenshots of the architecture block in `README.md` and of the "Model decision" and weighted-index results tables in `reports/evaluation.md`, both as rendered on GitHub. The numbers in them are final.
-- **Kitsilano figures (shot 5):** from `ml/outputs/forecast_2026-10.json`: about 97 reported incidents, severity-weighted forecast 4,710 with an 80% range of 3,102 to 6,445, above typical (15.4% above October 2025). Check that the final build's drawer shows the same before recording.
+- **Graphics for shots 7 and 8:** screenshots of the architecture block in `README.md` and, from `reports/evaluation.md`, the "Model decision" table, the weighted-index results table and the "predicted chance of 'above'" reliability table under "Probabilities instead of tiers", all as rendered on GitHub. The numbers in them are final.
+- **Kitsilano figures (shot 5):** from `ml/outputs/forecast_2026-10.json`: about 97 reported incidents, severity-weighted forecast 4,710 with an 80% range of 3,102 to 6,445, and chances of 56% above its usual October level, 19% below and 25% within 10% of it (`p_above` 0.563, `p_below` 0.193, `p_within` 0.244, rounded by the drawer to add to 100). Check that the final build's drawer shows the same before recording.
 - Record each shot as its own clip, with two takes. Record the voice-over separately in a quiet room, then trim the clips to the timings.
 - If time runs short, record the whole thing in one take with live narration over the app. A plain video beats a missing one.
 
@@ -40,8 +40,8 @@
 
 ### Shot 2: the map (0:14–0:28)
 
-- **On screen:** hover over two or three areas so the hover card shows, then rest the cursor on the legend.
-- **Voice-over:** "NeighbourCast maps Vancouver's 24 police neighbourhoods, month by month, from 2003 to August 2026. Each colour compares an area only with itself, the same month a year earlier: below typical, typical or above typical, with a 10% band."
+- **On screen:** hover over two or three areas so the hover card shows each one's deviation from its usual level, then rest the cursor on the gradient legend (30% below usual to 30% above usual).
+- **Voice-over:** "NeighbourCast maps Vancouver's 24 police neighbourhoods, month by month, from 2003 to August 2026. Each colour compares an area only with its own usual level, the same month a year earlier: teal lower, amber higher, grey about the same. No labels, no ranking."
 
 ### Shot 3: playback (0:28–0:42)
 
@@ -55,8 +55,8 @@
 
 ### Shot 5: one neighbourhood (0:54–1:18)
 
-- **On screen:** click **Kitsilano**. The drawer opens. In the edit, zoom in on the forecast number, then the range bar with its 12-month average tick, then the sparkline.
-- **Voice-over:** "Kitsilano: a severity-weighted forecast, about 97 reported incidents, and an 80% uncertainty range. It's above typical: more than 10% above last October. That tick is the plain 12-month average our model had to beat. We show it on purpose. The chart is the last three years, and where October lands."
+- **On screen:** click **Kitsilano**. The drawer opens. In the edit, zoom in on the forecast number, then the range bar with its 12-month average tick, then the chances bar (teal, grey, amber) and the sentence under it, then the sparkline.
+- **Voice-over:** "Kitsilano: a severity-weighted forecast, about 97 reported incidents, and an 80% uncertainty range. That tick is the plain 12-month average our model had to beat; we show it on purpose. Then the chances: 56% that Kitsilano ends above its usual October level, 19% below. Chances, not a label, because our error is wider than the 10% band."
 
 ### Shot 6: small areas (1:18–1:30)
 
@@ -70,8 +70,10 @@
 
 ### Shot 8: evaluation (1:50–2:14)
 
-- **On screen:** the "Model decision" table (five candidates, none qualifies), then the weighted-index results table with the `mean_12` and `C0 poisson_glm (reference)` rows highlighted. Overlay: "Pooled MAE: GLM 713.1 vs 12-month average 745.5 (4.3% lower). In 2026 alone: 673.1 vs 630.2. 80% range covered 79.7% of 2026."
-- **Voice-over:** "Before testing, we wrote down a rule: a new model ships only if it beats our Poisson GLM by at least 1%. Five alternatives failed it on 20 held-out months. The GLM beats a plain 12-month average by only 4%, and in 2026 the average did better. So we show both. The uncertainty range comes from our own backtest errors."
+- **On screen:** the "Model decision" table (five candidates, none qualifies), then the weighted-index results table with the `mean_12` and `C0 poisson_glm (reference)` rows highlighted, then the "predicted chance of 'above'" reliability table with its 80-100% row highlighted (the 2025->2026 columns).
+  - Overlay over the results table: "Pooled MAE: GLM 713.1 vs 12-month average 745.5 (4.3% lower). In 2026 alone: 673.1 vs 630.2. 80% range covered 79.7% of 2026."
+  - Overlay over the reliability table: "Built from 2025, checked on 2026: said 80–100% chance above, happened 90%. Ranked probability score 0.173 vs 0.241 for base rates (28% better)."
+- **Voice-over:** "We wrote down a rule first: a new model ships only if it beats our Poisson GLM by at least 1%. Five alternatives failed. The GLM beats a plain 12-month average by only 4%, so we show both. The chances come from our own past errors, checked on a year they weren't built from: when we said 80 to 100%, it happened 90% of the time."
 
 ### Shot 9: responsible design (2:14–2:30)
 

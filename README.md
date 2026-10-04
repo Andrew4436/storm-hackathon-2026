@@ -1,12 +1,15 @@
 # NeighbourCast
 
-NeighbourCast is a map of Vancouver's 24 VPD neighbourhoods that asks one question: is this month unusual for this neighbourhood? It shows reported incidents from Vancouver Police Department open data for every month from January 2003 to August 2026. Each area is coloured below typical, typical or above typical relative to this area's own history, never against other areas. It also forecasts October 2026, with an 80% uncertainty range and the simple baseline the forecast had to beat. Built at StormHacks 2026.
+NeighbourCast is a map of Vancouver's 24 VPD neighbourhoods that asks one question: is this month unusual for this neighbourhood? It shows reported incidents from Vancouver Police Department open data for every month from January 2003 to August 2026, with each area shaded on one continuous teal-to-amber scale against its own usual level, never against other areas. It also forecasts October 2026: for each area, the chance that the month ends more than 10% below, within 10% of, or more than 10% above its usual level, with an 80% uncertainty range and the simple baseline the forecast had to beat. Built at StormHacks 2026.
 
 ## The question it answers
 
 > Is this month unusual for this neighbourhood, compared with its own past?
 
-- Every colour compares an area only with itself: the same calendar month one year earlier. More than 10% below it is below typical, more than 10% above it is above typical, anything in between is typical.
+- Every colour compares an area only with itself. Its usual level is the same calendar month one year earlier (the same month within the previous 12 complete months).
+- **Past months:** the colour is how far the month actually landed from that level: teal below, amber above, grey about the same, at full strength 30% either way.
+- **Forecast month:** the colour is the chance of ending more than 10% above that level minus the chance of ending more than 10% below it. Amber means above is more likely, teal means below is more likely, grey means even odds. The drawer shows all three chances.
+- **No labels.** We dropped the old below / typical / above tiers. The forecast error (80% range roughly -34% to +37%) is wider than the 10% band, so a hard label would have put no October area in the middle group and hidden how uncertain each call is. Calibrated chances say both what is likely and how sure we are.
 - The smallest unit is one neighbourhood in one month. No streets, addresses or people.
 - It does not rank neighbourhoods and does not rate places to live or visit.
 
@@ -17,9 +20,11 @@ Live app: `<app-url>` · Demo video: `<video-url>` · Repo: https://github.com/A
 
 ## What the app does
 
-- **Historical mode:** pick any complete month from 2003-01 to 2026-08 with the slider or arrows, or press **Play months**.
-- **Forecast mode:** October 2026, forecast from data through August 2026 (a two-month horizon, because September 2026 is incomplete). The October 2026 map has 8 areas below typical, 8 typical, 7 above typical and 1 with insufficient data (Musqueam).
-- **Drawer:** severity-weighted activity, the plain count of reported incidents, the uncertainty range, the 12-month average, and a 36-month sparkline.
+- **Historical mode:** pick any complete month from 2003-01 to 2026-08 with the slider or arrows, or press **Play months**. Each area is shaded by how far that month landed from its usual level.
+- **Forecast mode:** October 2026, forecast from data through August 2026 (a two-month horizon, because September 2026 is incomplete). Each area is shaded by its chances. Of the 23 areas with a forecast, 14 are more likely to end below their usual October level than above it and 9 the other way; Musqueam has insufficient data. Kitsilano, for example, has a 56% chance of ending more than 10% above its usual October level and a 19% chance of ending more than 10% below it.
+- **Legend:** a gradient bar drawn from the same colour function as the map. Forecast: likely below usual, even odds, likely above usual. Past months: 30% below usual to 30% above usual.
+- **Drawer:** severity-weighted activity, the plain count of reported incidents, the uncertainty range, the 12-month average, a bar with the three chances (below, within, above) and the sentence that states them, and a 36-month sparkline.
+- **Hover card:** the area's largest chance in forecast mode, or the month's deviation from its usual level in historical mode.
 - **How this works:** method, limitations, evaluation and sources, inside the app.
 - **Shareable views:** the state lives in the URL, for example `/?mode=forecast&area=kitsilano`.
 - **Small areas:** Stanley Park and Musqueam have no City boundary shape, so they are drawn as circles. Musqueam shows "insufficient data".
@@ -41,7 +46,7 @@ data/processed/neighbourhood_monthly.csv                   |
             v                                              |
 ml/src/build_features.py -> evaluate.py -> forecast.py     |
   baselines, Poisson GLM, model study (5 candidates),      |
-  backtest, 80% ranges, tiers                              |
+  backtest, 80% ranges, probabilities                      |
             |                                              |
             +--> reports/evaluation.md, model_study.md     |
             v                                              |
@@ -87,9 +92,9 @@ python ml/src/evaluate.py
 python ml/src/forecast.py
 ```
 
-- Run the three commands in this order, from the repo root. The whole pipeline takes about 40 seconds and is deterministic. `evaluate.py` also runs the model and tier studies (`ml/src/study.py`).
+- Run the three commands in this order, from the repo root. The whole pipeline takes about 40 seconds and is deterministic. `evaluate.py` also runs the model and tier studies (`ml/src/study.py`) and scores the probabilities out of sample (`ml/src/probabilities.py`).
 - Outputs: `ml/outputs/history.json`, `ml/outputs/forecast_2026-10.json`, `ml/outputs/meta.json`, `reports/evaluation.md` and `reports/model_study.md`.
-- Every setting (severity weights, horizon, folds, model selection rule, tier window, thresholds and reference) lives in `ml/config.py`. See `ml/README.md`.
+- Every setting (severity weights, horizon, folds, model selection rule, and the usual-level window, reference and ±10% band, still named `TIER_*`) lives in `ml/config.py`. See `ml/README.md`.
 
 ### 3. Backend (optional: the app runs on static files without it)
 
@@ -113,7 +118,7 @@ npm run dev        # http://localhost:5173
 - By default it reads `crime-tracker/public/data/`. To use the backend, put `VITE_API_URL=http://localhost:8000` in `crime-tracker/.env.local`.
 - After re-running the ML pipeline, run `npm run sync-data` in `crime-tracker/`. It copies `meta.json`, `history.json` and the forecast file from `ml/outputs/` into `crime-tracker/public/data/`.
 - Production build: `npm run build`, then `npm run preview` (http://localhost:4173).
-- The last complete month, the forecast month, the tier wording and every evaluation figure the app shows come from `meta.json`. `crime-tracker/src/config.js` holds only the first month, the partial-month note and fallbacks used if `meta.json` is missing. See `crime-tracker/README.md`.
+- The last complete month, the forecast month, the wording for the usual level and its band, and every evaluation figure the app shows (including the probability scores) come from `meta.json`; the chances come from the forecast file. `crime-tracker/src/config.js` holds only the first month, the partial-month note and fallbacks used if `meta.json` is missing. See `crime-tracker/README.md`.
 
 ## Branch map
 
@@ -150,7 +155,9 @@ The team contract is `docs/ML_TEAM_CONTRACT.md`. Data rules are in `data/README.
 - **Shipped model:** a Poisson GLM. Before the model study we wrote down the rule: a candidate replaces the GLM only if its MAE on the severity-weighted index is at least 1% lower on 2026-01 to 2026-08 and lower pooled over both test periods. Five alternatives were tested on the same rows (per-type GLMs, an extended GLM, Poisson gradient boosting, a stacked blend, a per-area correction). None qualified, so the GLM stays (`reports/model_study.md`).
 - **Against a plain 12-month average:** over 20 held-out months (2025-01 to 2026-08, 480 neighbourhood-months), pooled MAE on the index is 713.1 vs 745.5, 4.3% lower. On the count it is 13.3 vs 13.7 reported incidents. WAPE is 12.9%. The GLM is better in 14 of 24 areas, and worse in 2026-01 to 2026-08 alone (673.1 vs 630.2). The app shows that average beside every forecast.
 - **Uncertainty:** the 80% range comes from backtest ratios of actual to forecast. Fitted on 2025 errors only, it covered 79.7% of 2026 outcomes.
-- **Tiers:** the forecast's colour matched the realised colour 58.9% of the time, against 42.4% for always guessing the most common tier (macro-F1 0.583). The plain 12-month average does as well (59.1%), so that skill comes from the same-month-last-year reference, not from the model. The rule was picked from an 18-setting grid; no setting met both pre-registered constraints, and the fallback used is disclosed in `reports/model_study.md`.
+- **Probabilities (what the map shows):** each forecast is spread by the model's own past errors: a Gaussian kernel on the log of the 480 backtest ratios of actual to forecast (bandwidth 0.107) gives the chance of ending more than 10% below, within 10% of, or more than 10% above the usual level. Scored out of sample (ratios from 2025 applied to 2026, 184 area-months): Brier score 0.160 for "above" and 0.186 for "below", against 0.239 and 0.242 for always using the base rate; ranked probability score 0.173 against 0.241 for the base rate (28% better) and 0.264 for a hard label.
+- **Calibration:** when the forecast said 80-100% chance of ending above the usual level, it happened 90% of the time (21 area-months); at 60-80% it happened 75%, at 40-60% it happened 50%. The weak spots: at a 20-40% chance of "above" it happened 17% (said 30%), and the small 80-100% "below" group happened 71% (said 88%, 14 area-months).
+- **Why labels were dropped:** the 10% band is narrower than the forecast error (80% range roughly -34% to +37%), so a hard below / typical / above label would have put no October area in the middle group and claimed more certainty than the forecast has. Most-likely label, for reference: the old point-forecast label matched the realised outcome 58.9% of the time, against 42.4% for always guessing the most common outcome; the plain 12-month average does as well (59.1%), so that skill comes from the same-month-last-year reference, not from the model. The reference and band were picked from an 18-setting grid; no setting met both pre-registered constraints, and the fallback used is disclosed in `reports/model_study.md`.
 - **Noise floor:** for the median area (Marpole, about 66 reported incidents a month) roughly 12% of a month's count is Poisson noise, so more than half of the remaining error is irreducible.
 - Every evaluation number the app shows comes from `ml/outputs/meta.json`. Full tables are in `reports/evaluation.md`.
 

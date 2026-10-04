@@ -32,25 +32,25 @@ On screen: the start bookmark, the full map with no drawer.
 
 | Time | James clicks | Speaker 1 says |
 |---|---|---|
-| 0:20 | Nothing. Speaker 1 points at the map, then the legend. | "These are Vancouver's 24 police neighbourhoods in October 2019. Teal is below typical, grey is typical, amber is above typical, always against the same month a year earlier in that area, with a 10% band." |
+| 0:20 | Nothing. Speaker 1 points at the map, then the legend. | "These are Vancouver's 24 police neighbourhoods in October 2019. Each one is compared only with its own usual level, the same month a year earlier. Teal is lower, amber is higher, grey is about the same, at full strength 30% either way. No labels, no ranking." |
 | 0:32 | **Play months**. After about 3 seconds, around June 2020, **Pause**. | "Watch 2020. From May, most areas drop below where they were a year earlier. That's the pandemic, and nobody gets ranked." |
-| 0:45 | **Forecast** | "Forecast mode: October 2026. VPD's data stops on September 25th, so we forecast October from data through August, two months ahead." |
-| 0:55 | **Kitsilano** on the map. If the click misses, use "Choose from the list". | "Kitsilano: about 97 reported incidents, above typical for Kitsilano, which means more than 10% above last October. The bar is the 80% uncertainty range. The tick is the plain 12-month average we had to beat, shown on purpose. The chart is the last three years and where October lands." |
+| 0:45 | **Forecast** | "Forecast mode: October 2026, from data through August, because VPD's data stops on September 25th. Now colour is a chance: amber where above usual is more likely, teal where below is." |
+| 0:55 | **Kitsilano** on the map. If the click misses, use "Choose from the list". | "Kitsilano: about 97 reported incidents. The bar is the 80% uncertainty range, and the tick is the plain 12-month average we had to beat, shown on purpose. Then the chances: 56% chance above its usual October level, 19% below. Chances, not a label, because our error is wider than the 10% band." |
 | 1:12 | The hatched **Musqueam** circle in the south-west | "Musqueam averages about two reported incidents a month. We'd rather say 'insufficient data' than invent a colour." |
 | 1:20 | **How this works** | "Method, limitations, evaluation and sources all live inside the app." |
 | 1:28 | Nothing | "Chibueze, what's underneath?" |
 
-Kitsilano's figures come from `ml/outputs/forecast_2026-10.json`: severity-weighted forecast 4,710 (80% range 3,102 to 6,445), about 97 reported incidents, `above_typical`, 15.4% above October 2025 (4,083). The 12-month average tick is at 4,561. If asked why it is above typical: October 2025 was a quiet month for Kitsilano, so part of this is a return to its usual level. Check that the final build's drawer shows the same before 12:30 PM (see the checklist).
+Kitsilano's figures come from `ml/outputs/forecast_2026-10.json`: severity-weighted forecast 4,710 (80% range 3,102 to 6,445), about 97 reported incidents, `p_above` 0.563, `p_below` 0.193, `p_within` 0.244, with the point forecast 15.4% above its usual October level (October 2025, 4,083). The drawer rounds the chances so they add to 100: 56% above, 19% below, 25% within 10%. The 12-month average tick is at 4,561. If asked why above is more likely: October 2025 was a quiet month for Kitsilano (10% below its 12-month average), so part of this is a return to its usual level. Check that the final build's drawer shows the same before 12:30 PM (see the checklist).
 
 ### 1:30–2:15 Technical (Speaker 2)
 
 On screen: the How this works sheet stays open.
 
-> "Under the map is every VPD record since 2003, and three traps nearly fooled us. VPD's all-years export is missing 2022 entirely, so we merged a separate download. Almost half the violent-offence rows look like duplicates, because VPD redacts them, so we kept every one. And September is only part-published, so we forecast from August. Then, before testing anything, we wrote down the rule: a new model ships only if it beats our Poisson GLM by at least 1%, on 2026 and overall. Five alternatives, from per-type models to gradient boosting, all failed it on 20 held-out months. The GLM beats a plain 12-month average by only 4%, and in 2026 the average did better. So the app shows that average beside every forecast, and the range comes from our own backtest errors."
+> "Under the map is every VPD record since 2003, and three traps nearly fooled us. VPD's all-years export is missing 2022 entirely, so we merged a separate download. Almost half the violent-offence rows look like duplicates, because VPD redacts them, so we kept every one. And September is only part-published, so we forecast from August. Before testing, we wrote down the rule: a new model ships only if it beats our Poisson GLM by at least 1%. Five alternatives, from per-type models to gradient boosting, all failed it. The GLM beats a plain 12-month average by only 4%, and in 2026 the average did better, so the app shows it beside every forecast. And our error is wider than the 10% band, so a single label would overclaim. Instead we turn our own past errors into chances, and we checked them on a year they weren't built from: when we said 80 to 100%, it happened 90% of the time. They score 28% better than quoting the base rates."
 >
-> Backup figures, only if asked: pooled MAE on the severity-weighted index is GLM 713.1 vs 745.5 for the 12-month average, 4.3% lower. On the count it is 13.3 vs 13.7. The GLM is better in 14 of 24 areas. In 2026-01 to 2026-08 it scored 673.1 vs the average's 630.2. WAPE is 12.9%. The closest alternative, an extended GLM, was 1% worse overall. The 80% range, fitted on 2025 errors, covered 79.7% of 2026 outcomes. The colour matched the outcome 58.9% of the time, against 42.4% for always guessing the most common colour (macro-F1 0.583), but the plain average does as well, so that skill comes from comparing with the same month last year, not from the model. For a median area about 12% of a month's count is pure Poisson noise, so more than half of the remaining error can't be removed by any model.
+> Backup figures, only if asked: pooled MAE on the severity-weighted index is GLM 713.1 vs 745.5 for the 12-month average, 4.3% lower. On the count it is 13.3 vs 13.7. The GLM is better in 14 of 24 areas. In 2026-01 to 2026-08 it scored 673.1 vs the average's 630.2. WAPE is 12.9%. The closest alternative, an extended GLM, was 1% worse overall. The 80% range, fitted on 2025 errors, covered 79.7% of 2026 outcomes. The chances come from a Gaussian kernel on the log of 480 past forecast errors (bandwidth 0.107). Built from 2025, scored on 2026 (184 area-months): Brier score 0.160 for "above" and 0.186 for "below", against 0.239 and 0.242 for the base rate; ranked probability score 0.173 vs 0.241 for the base rate and 0.264 for a hard label. Calibration: said 80–100% above, happened 90% (21 cases); 60–80%, 75%; 40–60%, 50%. Weak spots: said about 30% above, happened 17%; a small 80–100% "below" group happened 71% (14 cases). Read as a single most-likely call, the old label was right 58.9% of the time vs 42.4% for always guessing the most common outcome, but the plain average does as well, so that skill comes from comparing with the same month last year. For a median area about 12% of a month's count is pure Poisson noise, so more than half of the remaining error can't be removed by any model.
 
-The one number to land is the gain over the plain 12-month average. Say it slowly.
+The one number to land: "when we said 80 to 100%, it happened 90% of the time", with the ranked probability score 28% better than base rates. Say it slowly.
 
 ### 2:15–2:40 Ethics (Speaker 1, unprompted)
 
@@ -79,20 +79,20 @@ Each answer takes about 15 seconds. The name in brackets is who answers.
 3. **Why no street level?** (Humberto)
    "On purpose. VPD offsets property incidents to the hundred block and withholds violent-offence locations entirely. Street-level scores invite judgements about specific homes and people. Our smallest unit is a whole neighbourhood in a whole month."
 
-4. **Why does Musqueam show no tier?** (James)
+4. **Why does Musqueam have no colour?** (James)
    "It averages about two reported incidents a month, so one extra incident moves it by 50%. Any colour would be noise. Areas averaging under 10 a month get 'insufficient data'. We keep it separate from Dunbar-Southlands rather than hiding it inside."
 
 5. **What did ML add, if the baseline is that strong?** (Chibueze)
-   "Honestly, little accuracy, and more than half of the error left is noise no model can remove. It added a calibrated uncertainty range from backtest errors, month-of-year seasonality, and a fair, pre-registered test that tells you how much to trust it. Knowing that the baseline is strong is itself a result."
+   "Honestly, little accuracy, and more than half of the error left is noise no model can remove. It added an uncertainty range and calibrated chances, both built from backtest errors and checked on a year they weren't built from, month-of-year seasonality, and a fair, pre-registered test that tells you how much to trust it. Knowing that the baseline is strong is itself a result."
 
 6. **Why not per capita?** (Humberto)
    "Census population counts residents, not who is actually there. Downtown has far more workers and visitors than residents, so per capita would mislead. It's also published for the City's 22 local areas, not VPD's 24. And since each area is compared only with itself, population mostly cancels out."
 
-7. **How are the tiers defined?** (James)
-   "Each month is compared with the same month one year earlier in that area. More than 10% lower is below typical, more than 10% higher is above typical, anything in between is typical. We picked that from 18 settings by how much better the colour does than always guessing the most common one. A busy area can be typical and a quiet one above typical. Nothing is ranked across areas."
+7. **How are the colours defined?** (James)
+   "Each area is compared only with its own usual level: the same month one year earlier in that area. For the forecast, the colour is the chance of ending more than 10% above it minus the chance of ending more than 10% below it: amber where above is more likely, teal where below is, grey near even odds. For past months it's how far the month actually landed, full colour at 30% either way. We dropped labels because our forecast error is wider than the 10% band: a label would have put no October area in the middle and hidden how sure we are. A busy area can be teal and a quiet one amber. Nothing is ranked across areas."
 
-8. **What does the range mean?** (Chibueze)
-   "It's where 80% of outcomes should land. We took actual-over-forecast ratios from held-out months, used the 10th and 90th percentiles, and multiplied the forecast by them. So about one month in five lands outside, and the app says so."
+8. **What do the range and the chances mean?** (Chibueze)
+   "The range is where 80% of outcomes should land. We took actual-over-forecast ratios from held-out months, used the 10th and 90th percentiles, and multiplied the forecast by them; built from 2025, it held 79.7% of 2026. The chances use the same past errors, smoothed: Kitsilano's 56% means that in months like this, a bit more than half end more than 10% above the usual level. We checked: when we said 80 to 100%, it happened 90% of the time. The weakest spot is around 30%, where it happened 17%."
 
 9. **What would you do next?** (Humberto)
    "Put it in front of community groups and City staff and test whether 'unusual for this place' helps them. Then a weekly refresh from GeoDASH, per-type views, a correction for late-reported violent offences, and the clean table released as open data."
@@ -106,7 +106,7 @@ Each answer takes about 15 seconds. The name in brackets is who answers.
 ### By 12:30 PM
 
 - [ ] The final build is deployed. Open `<app-url>` in a private window and check that all 24 areas render in both modes.
-- [ ] Open Kitsilano in forecast mode and check that the drawer shows about 97 reported incidents and above typical, as in the demo script above.
+- [ ] Open Kitsilano in forecast mode and check that the drawer shows about 97 reported incidents and the chances "56% chance above its usual level for October, 19% chance below, 25% chance within 10% of it", as in the demo script above. Hover it once and check the card reads "Above usual: 56%".
 - [ ] Check that **Play months** from October 2019 reaches June 2020 in about 3 seconds and that the map is mostly teal from May 2020.
 - [ ] Save all four bookmarks to the bookmarks bar.
 - [ ] Rehearse the full 3:00 twice with the stopwatch. Rehearse Q&A once.
