@@ -55,16 +55,16 @@ Outside this folder:
 | 5 | Drop 3 types (19,554 dropped): `Vehicle Collision or Pedestrian Struck (with Injury)`, `Vehicle Collision or Pedestrian Struck (with Fatality)`, `Homicide` | 942,457 | Collisions are traffic events and have the 2014 break. Homicide is about 1/month city-wide and must never be forecast or mapped. |
 | 6 | Chart: the 8 kept types | n/a | Check the filter. |
 | 7 | Chart: monthly totals per year, partial month hatched | n/a | Check that every month exists, including 2022, and see the partial 2026-09. |
-| 8 | Group by neighbourhood x month, then reindex to the full 24 x 285 grid with `fill_value=0` | 6,840 cells | One row per neighbourhood-month. 18 zero cells were filled in, all in Musqueam. |
-| 9 | Export with `is_partial`; `assert sum(incident_count) == len(cleaned rows)` (942,457 for this extract) | 6,840 | The output adds up exactly to the cleaned rows. |
+| 8 | Group by neighbourhood x month (overall and one column per type), then reindex to the full 24 x 285 grid with `fill_value=0` | 6,840 cells | One row per neighbourhood-month. 18 zero cells were filled in, all in Musqueam. |
+| 9 | Export with `is_partial`; asserts: `sum(incident_count) == len(cleaned rows)` (942,457 for this extract), the eight type columns sum to `incident_count` on every row, and each type column matches the raw rows | 6,840 | The output adds up exactly to the cleaned rows, overall and per type. |
 
 The 8 types kept, all summed into `incident_count`: Other Theft 260,241; Theft from Vehicle 260,006; Mischief 122,938; Offence Against a Person 86,552; Break and Enter Residential/Other 75,102; Break and Enter Commercial 51,542; Theft of Vehicle 46,439; Theft of Bicycle 39,637. Total: 942,457.
 
-Deliberately **not** done: no de-duplication, no geocoding or reverse geocoding, no use of block or coordinates, no per-type columns, no outlier removal.
+Deliberately **not** done: no de-duplication, no geocoding or reverse geocoding, no use of block or coordinates, no outlier removal.
 
 ## Output schema: `processed/neighbourhood_monthly.csv`
 
-One row per (neighbourhood, month). There are no missing values. Rows are sorted by `neighbourhood`, then `month_str`.
+One row per (neighbourhood, month), 14 columns. There are no missing values. Rows are sorted by `neighbourhood`, then `month_str`.
 
 | Column | Type | Meaning | Allowed values |
 |---|---|---|---|
@@ -73,9 +73,12 @@ One row per (neighbourhood, month). There are no missing values. Rows are sorted
 | `month_str` | string | Month key, `YYYY-MM` | `2003-01` to `2026-09` (285 values, none missing) |
 | `neighbourhood` | string | VPD neighbourhood name, exactly as VPD spells it | the 24 names below |
 | `incident_count` | int | Number of reported incidents of the 8 kept types in that neighbourhood and month | >= 0. 0 occurs only for Musqueam (18 cells). |
+| `other_theft`, `theft_from_vehicle`, `mischief`, `offence_against_a_person`, `break_and_enter_residential_other`, `break_and_enter_commercial`, `theft_of_vehicle`, `theft_of_bicycle` | int | Reported incidents of that one type in that neighbourhood and month | >= 0. The eight columns sum to `incident_count` on every row. |
 | `is_partial` | int (0/1) | 1 if the month is incomplete in the source data | 1 only for `month_str == "2026-09"` (24 rows). Otherwise 0. |
 
 Note: `month` here is the calendar month number (1-12). The team-wide `YYYY-MM` month key (called `month` in the API and forecast export) is `month_str`.
+
+A severity-weighted index is deliberately **not** stored in this file. Compute it as the sum of each type column times its weight; the weights live in `ml/config.py` (`SEVERITY_WEIGHTS`, keyed by these column names) and are owned by the ML branch, so this data file never has to change when weights do.
 
 **The 24 neighbourhoods:** Arbutus Ridge, Central Business District, Dunbar-Southlands, Fairview, Grandview-Woodland, Hastings-Sunrise, Kensington-Cedar Cottage, Kerrisdale, Killarney, Kitsilano, Marpole, Mount Pleasant, Musqueam, Oakridge, Renfrew-Collingwood, Riley Park, Shaughnessy, South Cambie, Stanley Park, Strathcona, Sunset, Victoria-Fraserview, West End, West Point Grey.
 
