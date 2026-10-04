@@ -4,6 +4,7 @@ import {
   EVAL_TO,
   EXTRACT_END,
   FIRST_MONTH,
+  SLIDER_START,
   HIST_SATURATE_PCT,
   LIMITATIONS,
   PARTIAL_MONTH,
@@ -186,7 +187,8 @@ export default function HowItWorks({ meta, headingRef }) {
         <ul>
           <li>
             Shows reported incidents for each of the 24 VPD neighbourhoods, one month at a time, from{' '}
-            {monthLabel(FIRST_MONTH)} to {monthLabel(meta.data_through)}.
+            {monthLabel(SLIDER_START)} to {monthLabel(meta.data_through)}. The record begins in {monthLabel(FIRST_MONTH)};
+            that first year is only the comparison base for the next, so the timeline starts a year later.
           </li>
           <li>
             Combines eight incident types into one severity-weighted activity figure, with weights that follow the

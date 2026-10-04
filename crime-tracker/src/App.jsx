@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { FIRST_MONTH, PLAY_INTERVAL_MS } from './config.js'
+import { FIRST_MONTH, PLAY_INTERVAL_MS, SLIDER_START } from './config.js'
 import { monthLabel } from './format.js'
 import { AREA_BY_NAME, AREA_BY_SLUG } from './areas.js'
 import { loadData } from './api.js'
@@ -21,7 +21,7 @@ function readUrl() {
   const m = p.get('month')
   return {
     mode: p.get('mode') === 'forecast' ? 'forecast' : 'historical',
-    month: m && /^\d{4}-(0[1-9]|1[0-2])$/.test(m) && m >= FIRST_MONTH ? m : null,
+    month: m && /^\d{4}-(0[1-9]|1[0-2])$/.test(m) && m >= SLIDER_START ? m : null,
     area: AREA_BY_SLUG.get(p.get('area') ?? '')?.name ?? null,
   }
 }

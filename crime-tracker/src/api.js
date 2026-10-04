@@ -1,4 +1,4 @@
-import { META_DEFAULTS } from './config.js'
+import { META_DEFAULTS, SLIDER_START } from './config.js'
 import { AREAS } from './areas.js'
 import { forecastShade, historyShade } from './scale.js'
 
@@ -187,7 +187,7 @@ export async function loadData(signal) {
 
   return {
     meta,
-    months: [...monthSet].sort(),
+    months: [...monthSet].filter((m) => m >= SLIDER_START).sort(),
     areas: AREAS.map((a) => a.name),
     byKey,
     seriesByArea,

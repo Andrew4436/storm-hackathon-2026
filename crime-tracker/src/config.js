@@ -2,6 +2,8 @@
 export const APP_NAME = 'NeighbourCast'
 
 export const FIRST_MONTH = '2003-01'
+// First month shown on the timeline: the first that can be compared with the same month a year earlier.
+export const SLIDER_START = '2004-01'
 // The month the VPD extract stops part-way through (is_partial = 1), or null if it ends on a month boundary.
 // "How this works" explains it only while it comes after the last complete month in meta.json.
 export const PARTIAL_MONTH = '2026-09'
