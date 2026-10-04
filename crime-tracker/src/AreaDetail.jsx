@@ -1,14 +1,15 @@
-import { DATA_THROUGH, FORECAST_MONTH, HORIZON_MONTHS, TIER_WINDOW_MONTHS } from './config.js'
+import { SPARK_MONTHS } from './config.js'
 import { recordFor } from './api.js'
-import { fmtNum, monthLabel, numberWord, pctText } from './format.js'
+import { bandText, fmtNum, intervalPct, monthLabel, numberWord, pctText, typicalLevelText } from './format.js'
 import Sparkline from './Sparkline.jsx'
 import { TierChip } from './Swatch.jsx'
 
-function compareText(rec) {
+/** "12% above this area's typical level (36-month average). Typical means within 5% of that level." */
+function compareText(rec, meta) {
   if (rec.tier === 'insufficient_data') return null
   if (rec.tier === 'none') return 'Comparisons start once an area has 12 months of history.'
   if (rec.pct_vs_typical == null) return null
-  return `${pctText(rec.pct_vs_typical)}.`
+  return `${pctText(rec.pct_vs_typical, meta)}. ${bandText(meta)}`
 }
 
 /** Uncertainty range as a horizontal bar: the band, the forecast point and the 12-month baseline tick. */
@@ -37,7 +38,7 @@ function RangeBar({ low, high, value, baseline }) {
 }
 
 function HistoricalDetail({ data, name, month, rec }) {
-  const cmp = compareText(rec)
+  const cmp = compareText(rec, data.meta)
   const insufficient = rec.tier === 'insufficient_data'
   return (
     <>
@@ -53,16 +54,17 @@ function HistoricalDetail({ data, name, month, rec }) {
       </dl>
       {insufficient && <p className="detail__text">Too few reported incidents here to compare one month with another.</p>}
       {cmp && <p className="detail__text">{cmp}</p>}
-      <h3 className="detail__h3">Severity-weighted activity, {TIER_WINDOW_MONTHS} months</h3>
+      <h3 className="detail__h3">Severity-weighted activity, {SPARK_MONTHS} months</h3>
       <Sparkline series={data.seriesByArea.get(name)} month={month} tier={rec.tier} />
     </>
   )
 }
 
 function ForecastDetail({ data, name, rec }) {
+  const { meta } = data
   const insufficient = rec.tier === 'insufficient_data'
-  const cmp = compareText(rec)
-  const horizon = rec.horizon_months ?? HORIZON_MONTHS
+  const cmp = compareText(rec, meta)
+  const horizon = rec.horizon_months ?? meta.horizon_months
   const series = data.seriesByArea.get(name)
   if (insufficient) {
     return (
@@ -70,8 +72,8 @@ function ForecastDetail({ data, name, rec }) {
         <p className="detail__text">
           Too few reported incidents here to forecast meaningfully, so this area has no forecast number.
         </p>
-        <h3 className="detail__h3">Severity-weighted activity, {TIER_WINDOW_MONTHS} months</h3>
-        <Sparkline series={series} month={DATA_THROUGH} tier={rec.tier} />
+        <h3 className="detail__h3">Severity-weighted activity, {SPARK_MONTHS} months</h3>
+        <Sparkline series={series} month={meta.data_through} tier={rec.tier} />
       </>
     )
   }
@@ -90,23 +92,24 @@ function ForecastDetail({ data, name, rec }) {
       />
       {cmp && <p className="detail__text">{cmp}</p>}
       <p className="detail__note">
-        The typical level uses this area&rsquo;s last {TIER_WINDOW_MONTHS} complete months. The 12-month average is the
-        simple baseline the forecast is tested against. The range covers 80% of likely outcomes.
+        The typical level is {typicalLevelText(meta)}. The 12-month average is the simple baseline the forecast is
+        tested against. The range covers {intervalPct(meta)}% of likely outcomes.
       </p>
-      <h3 className="detail__h3">Severity-weighted activity, {TIER_WINDOW_MONTHS} months and forecast</h3>
+      <h3 className="detail__h3">Severity-weighted activity, {SPARK_MONTHS} months and forecast</h3>
       <Sparkline
         series={series}
-        month={DATA_THROUGH}
+        month={meta.data_through}
         tier={rec.tier}
         forecast={{
           month: rec.month,
           value: rec.forecast_weighted_index,
           low: rec.interval_low,
           high: rec.interval_high,
+          horizon,
         }}
       />
       <p className="detail__note">
-        Forecast made with data through {monthLabel(rec.data_through ?? DATA_THROUGH)}, {numberWord(horizon)}{' '}
+        Forecast made with data through {monthLabel(rec.data_through ?? meta.data_through)}, {numberWord(horizon)}{' '}
         {horizon === 1 ? 'month' : 'months'} ahead.
       </p>
     </>
@@ -121,7 +124,7 @@ export default function AreaDetail({ data, mode, month, name }) {
       <header className="detail__head">
         <h2 className="detail__name">{name}</h2>
         <p className="detail__month">
-          {mode === 'forecast' ? `Forecast for ${monthLabel(FORECAST_MONTH)}` : monthLabel(month)}
+          {mode === 'forecast' ? `Forecast for ${monthLabel(data.meta.forecast_month)}` : monthLabel(month)}
         </p>
         <TierChip tier={tier} />
       </header>

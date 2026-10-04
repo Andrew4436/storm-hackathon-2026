@@ -1,5 +1,4 @@
 import { AREAS } from './areas.js'
-import { FORECAST_MONTH } from './config.js'
 import { monthLabel } from './format.js'
 import { ChevronDownIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon } from './Icons.jsx'
 
@@ -24,6 +23,7 @@ export default function ControlBar({
   playing,
   onPlay,
   onAbout,
+  forecastMonth,
   aboutOpen,
   aboutRef,
   selected,
@@ -52,7 +52,7 @@ export default function ControlBar({
           ))}
         </div>
         <p className="bar__month" aria-live={playing ? 'off' : 'polite'}>
-          {monthLabel(forecast ? FORECAST_MONTH : month)}
+          {monthLabel(forecast ? forecastMonth : month)}
           {forecast && <span className="visually-hidden"> forecast</span>}
         </p>
         <button
@@ -115,7 +115,7 @@ export default function ControlBar({
           onChange={(e) => onMonth(months[Number(e.target.value)])}
           disabled={forecast}
           aria-label="Month"
-          aria-valuetext={forecast ? `Forecast month is fixed to ${monthLabel(FORECAST_MONTH)}` : monthLabel(month)}
+          aria-valuetext={forecast ? `Forecast month is fixed to ${monthLabel(forecastMonth)}` : monthLabel(month)}
         />
         <button
           type="button"

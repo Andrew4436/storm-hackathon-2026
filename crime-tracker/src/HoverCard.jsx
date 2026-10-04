@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from 'react'
-import { DATA_THROUGH, HORIZON_MONTHS, MINI_SPARK_MONTHS } from './config.js'
+import { MINI_SPARK_MONTHS } from './config.js'
 import { recordFor } from './api.js'
 import { fmtNum } from './format.js'
 import { TierChip } from './Swatch.jsx'
@@ -14,7 +14,7 @@ function MiniSpark({ series, month, forecast }) {
   if (end < 0) return null
   const pts = series.slice(Math.max(0, end - MINI_SPARK_MONTHS + 1), end + 1)
   if (pts.length < 2) return null
-  const slots = pts.length - 1 + (forecast ? HORIZON_MONTHS : 0)
+  const slots = pts.length - 1 + (forecast ? forecast.horizon : 0)
   const max = Math.max(...pts.map((p) => p.weighted_index), forecast?.high ?? 0, 1)
   const x = (i) => 2 + (i * (W - 6)) / slots
   const y = (v) => H - 3 - (v / max) * (H - 6)
@@ -82,7 +82,12 @@ export default function HoverCard({ hover, data, mode, month, rightInset = 0 }) 
   const series = data.seriesByArea.get(name) ?? []
   const forecast =
     mode === 'forecast' && rec && rec.tier !== 'insufficient_data'
-      ? { value: rec.forecast_weighted_index, low: rec.interval_low, high: rec.interval_high }
+      ? {
+          value: rec.forecast_weighted_index,
+          low: rec.interval_low,
+          high: rec.interval_high,
+          horizon: rec.horizon_months ?? data.meta.horizon_months,
+        }
       : null
 
   return (
@@ -90,7 +95,7 @@ export default function HoverCard({ hover, data, mode, month, rightInset = 0 }) 
       <p className="hover-card__name">{name}</p>
       <TierChip tier={rec?.tier ?? 'none'} />
       <Figures rec={rec} mode={mode} />
-      <MiniSpark series={series} month={mode === 'forecast' ? DATA_THROUGH : month} forecast={forecast} />
+      <MiniSpark series={series} month={mode === 'forecast' ? data.meta.data_through : month} forecast={forecast} />
     </div>
   )
 }

@@ -1,7 +1,7 @@
 /* ==========================================================================
    Layout. Desktop (>= 960px): the map fills the viewport, the control bar
-   floats top left and the legend bottom left; the drawer slides in from the
-   right. Small screens: see the end.
+   floats top left with the legend row directly under it; the drawer slides
+   in from the right. Small screens: see the end.
    ========================================================================== */
 .app {
   min-height: 100vh;
@@ -24,33 +24,24 @@
   height: 100%;
 }
 
-.stage__top,
-.stage__bottom {
+/* The control bar and, directly under it, the legend row: stacked and left-aligned. */
+.stage__top {
   position: absolute;
   z-index: 2;
+  top: var(--gutter);
   left: var(--gutter);
   right: var(--gutter);
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   pointer-events: none;
   transition: right 240ms ease;
 }
-.stage__top > *,
-.stage__bottom > * {
+.stage__top > * {
   pointer-events: auto;
 }
-.stage__top {
-  top: var(--gutter);
-  justify-content: flex-start;
-  align-items: flex-start;
-}
-.stage__bottom {
-  bottom: 28px; /* clears the attribution line */
-  align-items: flex-end;
-}
-.has-drawer .stage__top,
-.has-drawer .stage__bottom {
+.has-drawer .stage__top {
   right: calc(var(--drawer-w) + var(--gutter));
 }
 
@@ -297,20 +288,25 @@
   font-weight: 500;
 }
 
-/* ---------- Legend ---------- */
+/* ---------- Legend: one row under the control bar ---------- */
 .legend {
-  padding: 12px 16px;
+  max-width: 100%;
+  padding: 8px 14px;
 }
 .legend__list {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  flex-wrap: wrap; /* one row at desktop widths; wraps only when the space beside the drawer is too narrow */
+  gap: 4px 18px;
   padding: 0;
   list-style: none;
+  font-size: var(--fs-13);
+  font-weight: 500;
 }
-.legend__row {
+.legend__item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 /* ---------- Hover card (one, from React state) ---------- */
@@ -627,6 +623,13 @@
   font-size: var(--fs-13);
   color: var(--fog-400);
 }
+.how__stats {
+  margin-top: 8px;
+}
+.how__num {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ---------- Loading and errors ---------- */
 .status-page {
@@ -716,8 +719,9 @@
 }
 
 /* ==========================================================================
-   Small screens (< 960px): map on top at 56dvh, controls docked under it,
-   the drawer becomes a bottom sheet.
+   Small screens (< 960px): map on top at 56dvh, the control bar docked
+   under it with the legend row under the bar, the drawer becomes a bottom
+   sheet.
    ========================================================================== */
 @media (max-width: 959.98px) {
   .stage {
@@ -726,8 +730,7 @@
     height: auto;
     overflow: visible;
   }
-  .stage__top,
-  .stage__bottom {
+  .stage__top {
     display: contents;
   }
   .stage__map {
@@ -738,29 +741,27 @@
     min-height: 300px;
   }
 
+  /* Its own small panel under the bar, left-aligned with it; may wrap to two lines. */
   .legend {
-    order: 2;
-    margin: 10px var(--gutter) 0;
-    padding: 0;
-    border: 0;
-    background: none;
+    order: 3;
+    align-self: flex-start;
+    max-width: calc(100% - 2 * var(--gutter));
+    margin: 0 var(--gutter) 24px;
+    background: var(--ink-800);
   }
   .legend__list {
-    display: flex;
-    flex-wrap: wrap;
     gap: 4px 14px;
-    font-size: var(--fs-13);
   }
-  .legend__row {
+  .legend__item {
     gap: 6px;
   }
 
   /* Docked under the map. The rows wrap in reading order; the month label keeps its fixed width. */
   .bar {
-    order: 3;
+    order: 2;
     width: auto;
     max-width: none;
-    margin: 14px var(--gutter) 24px;
+    margin: 14px var(--gutter) 10px;
     grid-template-columns: 44px minmax(0, 1fr) auto 44px;
     grid-template-areas:
       'seg seg seg seg'

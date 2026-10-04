@@ -1,4 +1,4 @@
-import { HORIZON_MONTHS, SPARK_MONTHS, TIERS } from './config.js'
+import { SPARK_MONTHS, TIERS } from './config.js'
 import { fmtNum, monthLabel } from './format.js'
 
 const W = 320
@@ -8,7 +8,8 @@ const PAD = { l: 4, r: 8, t: 8, b: 6 }
 /**
  * Severity-weighted activity over a 36-month window.
  * Historical: the window ends at (or, early in the record, contains) the selected month, which is marked.
- * Forecast: the last 36 complete months, then the forecast point with its uncertainty range.
+ * Forecast: the last 36 complete months, then the forecast point with its uncertainty range, `forecast.horizon`
+ * months after the last one.
  */
 export default function Sparkline({ series, month, forecast, tier }) {
   if (!series?.length) return null
@@ -18,7 +19,7 @@ export default function Sparkline({ series, month, forecast, tier }) {
   const pts = series.slice(start, start + SPARK_MONTHS)
   const markIdx = idx - start
 
-  const slots = pts.length - 1 + (forecast ? HORIZON_MONTHS : 0)
+  const slots = pts.length - 1 + (forecast ? forecast.horizon : 0)
   const max = Math.max(...pts.map((p) => p.weighted_index), forecast?.high ?? 0, 1)
   const x = (i) => PAD.l + (slots ? (i * (W - PAD.l - PAD.r)) / slots : 0)
   const y = (v) => H - PAD.b - (v / max) * (H - PAD.t - PAD.b)

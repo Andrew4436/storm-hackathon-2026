@@ -1,24 +1,99 @@
 import {
   APP_NAME,
-  DATA_THROUGH,
   EVAL_FROM,
-  EVAL_GAIN_PCT,
   EVAL_TO,
   EXTRACT_END,
   FIRST_MONTH,
-  FORECAST_MONTH,
-  HORIZON_MONTHS,
   LIMITATIONS,
   PARTIAL_MONTH,
   PARTIAL_SHARE_PCT,
-  TIER_WINDOW_MONTHS,
 } from './config.js'
-import { dayLabel, monthLabel, numberWord } from './format.js'
+import {
+  dayLabel,
+  fmtPct1,
+  intervalPct,
+  modelName,
+  monthLabel,
+  numberWord,
+  oneIn,
+  thresholdText,
+  typicalLevelText,
+} from './format.js'
 
 const monthName = (key) => monthLabel(key).split(' ')[0]
 const plural = (n, word) => `${numberWord(n)} ${n === 1 ? word : `${word}s`}`
+const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/
 
-export default function HowItWorks({ headingRef }) {
+/** The held-out months: the first and last of evaluation.folds if it lists months, else EVAL_FROM to EVAL_TO. */
+function testPeriod(folds) {
+  const months = Array.isArray(folds) && folds.length && folds.every((f) => MONTH_RE.test(f)) ? [...folds].sort() : null
+  return months ? [months[0], months[months.length - 1]] : [EVAL_FROM, EVAL_TO]
+}
+
+const Num = ({ v }) => <strong className="how__num">{fmtPct1(v)}</strong>
+
+/** One plain sentence per evaluation figure from meta.json; a figure the file lacks is left out. */
+function Performance({ meta }) {
+  const e = meta.evaluation
+  const [from, to] = testPeriod(e.folds)
+  const gain = e.improvement_vs_mean_12_pct
+  const lines = []
+  if (e.wape_pct != null) {
+    lines.push(
+      <li key="wape">
+        On average the forecast misses by <Num v={e.wape_pct} /> of actual activity (WAPE).
+      </li>,
+    )
+  }
+  if (gain != null) {
+    lines.push(
+      <li key="gain">
+        {Math.abs(gain) < 0.05 ? (
+          <>About the same error as each area&rsquo;s 12-month average.</>
+        ) : (
+          <>
+            That is <Num v={Math.abs(gain)} /> {gain > 0 ? 'less' : 'more'} error than each area&rsquo;s 12-month
+            average.
+          </>
+        )}
+      </li>,
+    )
+  }
+  if (e.interval_coverage_pct != null) {
+    lines.push(
+      <li key="coverage">
+        The {intervalPct(meta)}% range held the actual value <Num v={e.interval_coverage_pct} /> of the time.
+      </li>,
+    )
+  }
+  if (e.tier_accuracy_pct != null) {
+    lines.push(
+      <li key="tier">
+        It picked the right colour <Num v={e.tier_accuracy_pct} /> of the time
+        {e.tier_majority_baseline_pct != null ? (
+          <>
+            , against <Num v={e.tier_majority_baseline_pct} /> for always picking the most common colour.
+          </>
+        ) : (
+          '.'
+        )}
+      </li>,
+    )
+  }
+  return (
+    <section>
+      <h3>How well does it forecast?</h3>
+      <p>
+        We tested the model we ship, {modelName(meta)}, on months it had never seen: {monthLabel(from)} to{' '}
+        {monthLabel(to)}.
+      </p>
+      {lines.length > 0 && <ul className="how__stats">{lines}</ul>}
+    </section>
+  )
+}
+
+export default function HowItWorks({ meta, headingRef }) {
+  const showPartial = PARTIAL_MONTH && PARTIAL_MONTH > meta.data_through
   return (
     <article className="how">
       <h2 className="how__title" tabIndex={-1} ref={headingRef}>
@@ -30,7 +105,7 @@ export default function HowItWorks({ headingRef }) {
         <ul>
           <li>
             Shows reported incidents for each of the 24 VPD neighbourhoods, one month at a time, from{' '}
-            {monthLabel(FIRST_MONTH)} to {monthLabel(DATA_THROUGH)}.
+            {monthLabel(FIRST_MONTH)} to {monthLabel(meta.data_through)}.
           </li>
           <li>
             Combines eight incident types into one severity-weighted activity figure, with weights that follow the
@@ -40,8 +115,8 @@ export default function HowItWorks({ headingRef }) {
             Colours each area relative to this area&rsquo;s own history. Areas are never ranked against each other.
           </li>
           <li>
-            Forecasts {monthLabel(FORECAST_MONTH)} for every area, {plural(HORIZON_MONTHS, 'month')} ahead of the latest
-            complete month.
+            Forecasts {monthLabel(meta.forecast_month)} for every area, {plural(meta.horizon_months, 'month')} ahead of
+            the latest complete month.
           </li>
         </ul>
       </section>
@@ -67,33 +142,26 @@ export default function HowItWorks({ headingRef }) {
       <section>
         <h3>How the colours and the range are worked out</h3>
         <p>
-          For each month, an area&rsquo;s severity-weighted activity is compared with its own average over the
-          previous {TIER_WINDOW_MONTHS} complete months. Close to that average is typical; clearly lower is below
-          typical; clearly higher is above typical. A busy area can be below typical and a quiet one above typical,
-          because each is only compared with itself. Areas need 12 months of history before they get a colour.
+          For each month, an area&rsquo;s severity-weighted activity is compared with its typical level:{' '}
+          {typicalLevelText(meta)}. {thresholdText(meta)} A busy area can be below typical and a quiet one above
+          typical, because each is only compared with itself. Areas need 12 months of history before they get a
+          colour.
         </p>
         <p>
-          The forecast gives a single number and an uncertainty range. The range is where the model expects 80% of
-          outcomes to fall, so roughly one month in five will land outside it.
+          The forecast gives a single number and an uncertainty range. The range is where the model expects{' '}
+          {intervalPct(meta)}% of outcomes to fall, so roughly one month in {oneIn(meta)} will land outside it.
         </p>
       </section>
 
-      <section>
-        <h3>How well the forecast does</h3>
-        <p>
-          We tested the forecast on months it had never seen: {monthLabel(EVAL_FROM)} to {monthLabel(EVAL_TO)}. The
-          model we ship, a Poisson regression (GLM), had about {EVAL_GAIN_PCT}% lower error than simply using each
-          area&rsquo;s 12-month average.
-        </p>
-      </section>
+      <Performance meta={meta} />
 
-      {PARTIAL_MONTH && (
+      {showPartial && (
         <section>
           <h3>Why {monthLabel(PARTIAL_MONTH)} is not on the timeline</h3>
           <p>
             The VPD extract ends on {dayLabel(EXTRACT_END)}, so {monthName(PARTIAL_MONTH)} holds only about{' '}
             {PARTIAL_SHARE_PCT}% of a normal month and would look like a sudden drop everywhere. The timeline stops at{' '}
-            {monthLabel(DATA_THROUGH)}, and the forecast uses data through {monthName(DATA_THROUGH)}.
+            {monthLabel(meta.data_through)}, and the forecast uses data through {monthName(meta.data_through)}.
           </p>
         </section>
       )}

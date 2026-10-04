@@ -30,13 +30,13 @@ function HatchDefs() {
 }
 
 /**
- * The full-bleed map and everything that floats over it: the control bar (top left), the legend (bottom left)
- * and the hover card. Owns the hover state, {name, x, y, w, h} from the map, which drives the one hover card.
+ * The full-bleed map and everything that floats over it: the control bar with the legend row under it (top
+ * left) and the hover card. Owns the hover state, {name, x, y, w, h} from the map, which drives the one hover
+ * card.
  */
 export default function MapStage({ data, mode, month, selected, onSelect, drawerOpen, controls }) {
   const [hover, setHover] = useState(null)
   const topRef = useRef(null)
-  const bottomRef = useRef(null)
 
   const showNone = useMemo(
     () => AREAS.some((a) => (recordFor(data, mode, month, a.name)?.tier ?? 'none') === 'none'),
@@ -44,13 +44,13 @@ export default function MapStage({ data, mode, month, selected, onSelect, drawer
   )
   const highlighted = hover?.name ?? null
 
-  // What the map has to fit around, in map-container pixels: the control bar, the legend and the zoom control,
-  // and the open drawer as a right inset. On small screens the bar and the legend sit outside the map (so they
-  // drop out as non-overlapping) and the drawer is a bottom sheet.
+  // What the map has to fit around, in map-container pixels: the control bar and the legend under it (each its
+  // own obstacle), the zoom control, and the open drawer as a right inset. On small screens the bar and the
+  // legend sit outside the map (so they drop out as non-overlapping) and the drawer is a bottom sheet.
   const measure = useCallback(
     (mapEl) => {
       const m = mapEl.getBoundingClientRect()
-      const panels = [topRef.current, bottomRef.current].filter(Boolean).flatMap((g) => [...g.children])
+      const panels = topRef.current ? [...topRef.current.children] : []
       const zoom = mapEl.querySelector('.leaflet-control-zoom')
       if (zoom) panels.push(zoom)
       const obstacles = []
@@ -64,10 +64,7 @@ export default function MapStage({ data, mode, month, selected, onSelect, drawer
     },
     [drawerOpen],
   )
-  const observe = useCallback(
-    () => [topRef.current, bottomRef.current].filter(Boolean).flatMap((g) => [g, ...g.children]),
-    [],
-  )
+  const observe = useCallback(() => (topRef.current ? [topRef.current, ...topRef.current.children] : []), [])
   const clearHover = useCallback(() => setHover(null), [])
 
   // The panels come before the map in the DOM so keyboard users reach the controls first; CSS places them.
@@ -75,9 +72,6 @@ export default function MapStage({ data, mode, month, selected, onSelect, drawer
     <main className="stage">
       <div className="stage__top" ref={topRef}>
         <ControlBar {...controls} selected={selected} onSelect={onSelect} />
-      </div>
-
-      <div className="stage__bottom" ref={bottomRef}>
         <Legend showNone={showNone} />
       </div>
 

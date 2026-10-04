@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DATA_THROUGH, FIRST_MONTH, FORECAST_MONTH, PLAY_INTERVAL_MS } from './config.js'
+import { FIRST_MONTH, PLAY_INTERVAL_MS } from './config.js'
 import { monthLabel } from './format.js'
 import { AREA_BY_NAME, AREA_BY_SLUG } from './areas.js'
 import { loadData } from './api.js'
@@ -11,16 +11,31 @@ import './App.css'
 
 const NO_MONTHS = []
 
-/** ?mode=forecast|historical&month=YYYY-MM&area=slug, so a view can be bookmarked. */
+/**
+ * ?mode=forecast|historical&month=YYYY-MM&area=slug, so a view can be bookmarked. Only the query string is read
+ * and written, so the app works under a base path (GitHub Pages). The month is checked against the loaded
+ * months once the data is in, because the last complete month comes from meta.json.
+ */
 function readUrl() {
   const p = new URLSearchParams(window.location.search)
   const m = p.get('month')
-  const validMonth = m && /^\d{4}-(0[1-9]|1[0-2])$/.test(m) && m >= FIRST_MONTH && m <= DATA_THROUGH
   return {
     mode: p.get('mode') === 'forecast' ? 'forecast' : 'historical',
-    month: validMonth ? m : DATA_THROUGH,
+    month: m && /^\d{4}-(0[1-9]|1[0-2])$/.test(m) && m >= FIRST_MONTH ? m : null,
     area: AREA_BY_SLUG.get(p.get('area') ?? '')?.name ?? null,
   }
+}
+
+/** The page description names the forecast month, which is only known once meta.json is in. */
+function describePage(forecastMonth) {
+  const label = monthLabel(forecastMonth)
+  const article = /^[AEIOU]/.test(label) ? 'an' : 'a'
+  document
+    .querySelector('meta[name="description"]')
+    ?.setAttribute(
+      'content',
+      `Reported incidents in Vancouver's 24 neighbourhoods, month by month, compared with each one's own past, with ${article} ${label} forecast.`,
+    )
 }
 
 function useData() {
@@ -63,6 +78,8 @@ export default function App() {
   const [playing, setPlaying] = useState(false)
   const [state, retry] = useData()
   const months = state.data?.months ?? NO_MONTHS
+  // Once the data is in, a month from the URL that is not on the timeline (or no month) becomes the last one.
+  if (months.length && !months.includes(month)) setMonth(months[months.length - 1])
 
   const aboutButtonRef = useRef(null)
   const areaSelectRef = useRef(null)
@@ -72,10 +89,18 @@ export default function App() {
   useEffect(() => {
     const p = new URLSearchParams()
     p.set('mode', mode)
-    p.set('month', month)
+    if (month) p.set('month', month)
     if (selected) p.set('area', AREA_BY_NAME.get(selected).slug)
-    window.history.replaceState(null, '', `${window.location.pathname}?${p}`)
+    // Only the query changes; the path (and any base path) and the hash stay as they are.
+    const url = new URL(window.location.href)
+    url.search = p.toString()
+    window.history.replaceState(null, '', url)
   }, [mode, month, selected])
+
+  const forecastMonth = state.data?.meta.forecast_month
+  useEffect(() => {
+    if (forecastMonth) describePage(forecastMonth)
+  }, [forecastMonth])
 
   // Playback: one month every PLAY_INTERVAL_MS through the historical range, stopping at the last month.
   useEffect(() => {
@@ -155,8 +180,8 @@ export default function App() {
     return (
       <StatusPage title="Loading reported-incident data">
         <p>
-          Fetching monthly history from {monthLabel(FIRST_MONTH)} to {monthLabel(DATA_THROUGH)}, the{' '}
-          {monthLabel(FORECAST_MONTH)} forecast and the neighbourhood boundaries.
+          Fetching monthly history from {monthLabel(FIRST_MONTH)}, the latest forecast and the neighbourhood
+          boundaries.
         </p>
       </StatusPage>
     )
@@ -204,6 +229,7 @@ export default function App() {
           playing,
           onPlay,
           onAbout,
+          forecastMonth: data.meta.forecast_month,
           aboutOpen: sheet === 'about',
           aboutRef: aboutButtonRef,
           selectRef: areaSelectRef,
@@ -214,7 +240,7 @@ export default function App() {
         label={shownKey === 'about' ? 'How this works' : 'Neighbourhood details'}
         onClose={closeDrawer}
       >
-        {shownKey === 'about' && <HowItWorks headingRef={sheetHeadingRef} />}
+        {shownKey === 'about' && <HowItWorks meta={data.meta} headingRef={sheetHeadingRef} />}
         {shownArea && <AreaDetail data={data} mode={mode} month={month} name={shownArea} />}
       </Drawer>
     </div>
