@@ -11,6 +11,8 @@
     10.0
   ],
   "tier_reference": "seasonal",
+  "tier_mode": "probabilistic",
+  "probability_method": "Each probability is the chance that the realised month lands below -10%, within, or above +10% of the area's usual level (same calendar month in the last 12 complete months), from the point forecast and a Gaussian-kernel smoothed distribution of the log-ratios (Scott's-rule bandwidth 0.107) of 480 past ratios actual / forecast (the same backtest points as the 80% range).",
   "interval_level": 0.8,
   "evaluation": {
     "folds": [
@@ -40,7 +42,82 @@
     "interval_coverage_pct": 79.7,
     "tier_accuracy_pct": 58.9,
     "tier_majority_baseline_pct": 42.4,
-    "tier_macro_f1": 0.584
+    "tier_macro_f1": 0.584,
+    "probabilistic": {
+      "brier_above": 0.1595,
+      "brier_below": 0.1864,
+      "brier_above_baseline": 0.2394,
+      "brier_below_baseline": 0.2417,
+      "rps": 0.173,
+      "rps_baseline": 0.2406,
+      "rps_hard_tier": 0.2636,
+      "reliability_above": [
+        {
+          "bin": "0-20%",
+          "predicted": 0.118,
+          "observed": 0.157,
+          "n": 51
+        },
+        {
+          "bin": "20-40%",
+          "predicted": 0.301,
+          "observed": 0.172,
+          "n": 58
+        },
+        {
+          "bin": "40-60%",
+          "predicted": 0.484,
+          "observed": 0.5,
+          "n": 34
+        },
+        {
+          "bin": "60-80%",
+          "predicted": 0.675,
+          "observed": 0.75,
+          "n": 20
+        },
+        {
+          "bin": "80-100%",
+          "predicted": 0.87,
+          "observed": 0.905,
+          "n": 21
+        }
+      ],
+      "reliability_below": [
+        {
+          "bin": "0-20%",
+          "predicted": 0.112,
+          "observed": 0.091,
+          "n": 44
+        },
+        {
+          "bin": "20-40%",
+          "predicted": 0.308,
+          "observed": 0.297,
+          "n": 64
+        },
+        {
+          "bin": "40-60%",
+          "predicted": 0.514,
+          "observed": 0.641,
+          "n": 39
+        },
+        {
+          "bin": "60-80%",
+          "predicted": 0.679,
+          "observed": 0.696,
+          "n": 23
+        },
+        {
+          "bin": "80-100%",
+          "predicted": 0.883,
+          "observed": 0.714,
+          "n": 14
+        }
+      ],
+      "statement": "Built from 2025 errors and checked on 2026: when the forecast said 80-100% chance of a month more than 10% above its usual level, it happened 90% of the time (21 area-months); when the forecast said 80-100% chance of a month more than 10% below it, it happened 71% of the time (14 area-months).",
+      "scored_on": "ratios from 2025 applied to 2026 (184 rows)"
+    }
   },
   "weights_source": "https://www150.statcan.gc.ca/n1/pub/85-004-x/2009001/t001-eng.htm",
   "generated_from": "data/processed/neighbourhood_monthly.csv",
@@ -53,7 +130,9 @@
     "Tier: forecast vs the same calendar month in the last 12 complete months; below -10% / above +10%; same rule for history and forecast.",
     "tier_majority_baseline_pct = accuracy of always guessing the most common realised tier.",
     "Noise floor: for the median area (Marpole, ~66 incidents/month) Poisson noise alone is ~12% of a month's count.",
-    "2026-10 forecast tiers: above_typical 7, below_typical 8, insufficient_data 1, typical 8.",
+    "Probabilities: p_below / p_within / p_above give the chance of each outcome against the band above (3 decimals, sum 1.000, null for insufficient_data); relative_activity_tier = most_likely = the largest of the three, kept for compatibility. p_*_count are the same for reported-incident counts.",
+    "Probability scores are out-of-sample (ratios from 2025 applied to 2026 (184 rows)); baseline = base rates of the ratio year for every area; hard tier = 100% on the most likely outcome.",
+    "2026-10 most-likely tiers: above_typical 9, below_typical 14, insufficient_data 1.",
     "Severity weights: Statistics Canada 85-004-X (2009) Table 1; CSI-inspired index, not the official CSI."
   ]
 }
