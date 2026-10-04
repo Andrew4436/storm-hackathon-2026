@@ -28,7 +28,7 @@ TARGETS = ["weighted_index", "incident_count"]   # primary first
 # --- horizon ---------------------------------------------------------------
 DATA_THROUGH = "2026-08"       # last complete month; 2026-09 is partial (is_partial == 1)
 HORIZON_MONTHS = 2
-FORECAST_MONTH = "2026-10"
+FORECAST_MONTH = "2026-010"
 
 # --- features --------------------------------------------------------------
 LAG_WINDOWS = [3, 6, 12]       # mean_3, mean_6, mean_12 over t-(k-1)..t
@@ -53,6 +53,6 @@ GLM_PARAMS = {"alpha": 1e-4, "max_iter": 3000}
 INTERVAL_LEVEL = 0.80          # from backtest ratios actual/forecast pooled across areas, Q10..Q90
 
 # --- tiers -----------------------------------------------------------------
-TIER_WINDOW_MONTHS = 36        # each area's own trailing complete months define "typical"
+TIER_WINDOW_MONTHS = 12       # each area's own trailing complete months define "typical"
 TIER_THRESHOLDS_PCT = (-5.0, 5.0)   # below_typical < -5%, typical within, above_typical > +5%; tune at 7 PM checkpoint
 TIER_MIN_MEAN = 10             # areas averaging fewer than this per month get "insufficient_data" (Musqueam)
