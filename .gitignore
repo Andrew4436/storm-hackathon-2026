@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+
+ml/models/
+node_modules/
+.next/
+dist/
+__pycache__/
+.venv/
+*.pyc
