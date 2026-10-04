@@ -4,8 +4,17 @@ A map of Vancouver's 24 VPD neighbourhoods. **Historical** mode shows reported-i
 month from `FIRST_MONTH` (`src/config.js`) to the last complete month (`data_through` in `public/data/meta.json`);
 **Forecast** mode shows the forecast for `forecast_month` from the same file, with an uncertainty range
 (`interval_level`, 80% today). Every area is coloured below typical / typical / above typical relative to this area's
-own history, never against other areas. Data: VPD GeoDASH open data. Not affiliated with the Vancouver Police
-Department.
+own history, never against other areas (today: more than 10% below or above the same month one year earlier, from
+`tier_window_months`, `tier_thresholds_pct` and `tier_reference`). Data: VPD GeoDASH open data. Not affiliated with
+the Vancouver Police Department.
+
+**Where the numbers come from.** The performance block ("How well does it forecast?" in How this works) and every
+label built from the pipeline (last complete month, forecast month, horizon, model name, what "typical" means and its
+thresholds, the range level) come from `public/data/meta.json`. That file is a copy of `ml/outputs/meta.json`, made
+by `npm run sync-data`; nothing in the app recomputes or hard-codes an evaluation figure. `META_DEFAULTS` in
+`src/config.js` is a fallback used only when the file or a field is missing or invalid. One exception: the held-out
+test period named in the performance block is `EVAL_FROM`..`EVAL_TO` in `src/config.js` (2025-01..2026-08), because
+the current `evaluation.folds` lists fold objects, not months (see "meta.json" below).
 
 Stack: Vite, React 19 (JSX), react-leaflet 5, Leaflet. No other runtime dependencies.
 
@@ -53,16 +62,22 @@ build's base path (`import.meta.env.BASE_URL`), so they also load under `/storm-
 
 ## meta.json
 
-Written by the ML pipeline next to the other outputs. The app loads it first (the forecast file is named after its
-`forecast_month`) and uses it for:
+Written by the ML pipeline as `ml/outputs/meta.json` (keys listed in `docs/ML_TEAM_CONTRACT.md`, section 7) and
+copied to `public/data/meta.json` by `npm run sync-data`. The app loads it first (the forecast file is named after
+its `forecast_month`) and uses it for:
 
 | Key | Used for |
 |---|---|
 | `data_through`, `forecast_month`, `horizon_months` | Last month on the timeline, the forecast month and file name, "N months ahead" |
-| `tier_window_months`, `tier_thresholds_pct` `[lo, hi]`, `tier_reference` (`trailing_mean` or `seasonal`) | How the typical level and the colour thresholds are described (area detail, How this works) |
+| `tier_window_months`, `tier_thresholds_pct` `[lo, hi]`, `tier_reference` (`trailing_mean` or `seasonal`) | How the typical level and the colour thresholds are described (area detail, How this works). With `seasonal` the typical level reads as the area's usual level for that time of year |
 | `interval_level` | "The range covers 80% of likely outcomes" |
 | `model` | The model name in How this works (`MODEL_NAMES` in `src/config.js`; other ids are shown as written) |
 | `evaluation` | How well does it forecast?: `wape_pct`, `improvement_vs_mean_12_pct`, `interval_coverage_pct`, `tier_accuracy_pct` vs `tier_majority_baseline_pct` |
+
+The current file (model `poisson_glm`, data through 2026-08) gives WAPE 12.9%, 4.3% less error than the 12-month
+average, 79.7% range coverage, and tier accuracy 58.9% vs 42.4% for always picking the most common colour. The app
+ignores the other top-level keys (`app`, `model_description`, `weights_source`, `generated_from`, `notes`) and shows
+only the five evaluation figures above.
 
 The file is optional. If it is missing or not valid JSON, or a field is missing or invalid, the app uses
 `META_DEFAULTS` in `src/config.js` for it and logs a warning. The evaluation block is taken whole, from the file or

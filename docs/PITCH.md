@@ -32,24 +32,23 @@ On screen: the start bookmark, the full map with no drawer.
 
 | Time | James clicks | Speaker 1 says |
 |---|---|---|
-| 0:20 | Nothing. Speaker 1 points at the map, then the legend. | "These are Vancouver's 24 police neighbourhoods in October 2019. Teal is below typical, grey is typical, amber is above typical, always relative to this area's own last three years." |
-| 0:32 | **Play months**. After about 3 seconds, around mid-2020, **Pause**. | "Watch spring 2020. Almost every area drops below its own typical level. That's the pandemic, and nobody gets ranked." |
+| 0:20 | Nothing. Speaker 1 points at the map, then the legend. | "These are Vancouver's 24 police neighbourhoods in October 2019. Teal is below typical, grey is typical, amber is above typical, always against the same month a year earlier in that area, with a 10% band." |
+| 0:32 | **Play months**. After about 3 seconds, around June 2020, **Pause**. | "Watch 2020. From May, most areas drop below where they were a year earlier. That's the pandemic, and nobody gets ranked." |
 | 0:45 | **Forecast** | "Forecast mode: October 2026. VPD's data stops on September 25th, so we forecast October from data through August, two months ahead." |
-| 0:55 | **Kitsilano** on the map. If the click misses, use "Choose from the list". | "Kitsilano: about [N] reported incidents, [tier] for Kitsilano. The bar is the 80% uncertainty range. The tick is the plain 12-month average we had to beat, shown on purpose. The chart is the last three years and where October lands." |
+| 0:55 | **Kitsilano** on the map. If the click misses, use "Choose from the list". | "Kitsilano: about 97 reported incidents, above typical for Kitsilano, which means more than 10% above last October. The bar is the 80% uncertainty range. The tick is the plain 12-month average we had to beat, shown on purpose. The chart is the last three years and where October lands." |
 | 1:12 | The hatched **Musqueam** circle in the south-west | "Musqueam averages about two reported incidents a month. We'd rather say 'insufficient data' than invent a colour." |
 | 1:20 | **How this works** | "Method, limitations, evaluation and sources all live inside the app." |
 | 1:28 | Nothing | "Chibueze, what's underneath?" |
 
-Fill in [N] and [tier] from the final build's drawer before 12:30 PM (see the checklist).
+Kitsilano's figures come from `ml/outputs/forecast_2026-10.json`: severity-weighted forecast 4,710 (80% range 3,102 to 6,445), about 97 reported incidents, `above_typical`, 15.4% above October 2025 (4,083). The 12-month average tick is at 4,561. If asked why it is above typical: October 2025 was a quiet month for Kitsilano, so part of this is a return to its usual level. Check that the final build's drawer shows the same before 12:30 PM (see the checklist).
 
 ### 1:30–2:15 Technical (Speaker 2)
 
 On screen: the How this works sheet stays open.
 
-<!-- refresh from reports/evaluation.md -->
-> "Under the map is every VPD record since 2003, and three traps nearly fooled us. VPD's all-years export is missing 2022 entirely, so we merged a separate download. Almost half the violent-offence rows look like duplicates, because VPD redacts them, so we kept every one. And September is only part-published, so we forecast from August. Then we tested a Poisson GLM and a Random Forest against three simple baselines on 20 held-out months, with the rule for picking the winner written down first. The GLM won, but by only 4% over a plain 12-month average, and in 2026 the average did better. So the app shows that average beside every forecast, and the range comes from our own backtest errors."
+> "Under the map is every VPD record since 2003, and three traps nearly fooled us. VPD's all-years export is missing 2022 entirely, so we merged a separate download. Almost half the violent-offence rows look like duplicates, because VPD redacts them, so we kept every one. And September is only part-published, so we forecast from August. Then, before testing anything, we wrote down the rule: a new model ships only if it beats our Poisson GLM by at least 1%, on 2026 and overall. Five alternatives, from per-type models to gradient boosting, all failed it on 20 held-out months. The GLM beats a plain 12-month average by only 4%, and in 2026 the average did better. So the app shows that average beside every forecast, and the range comes from our own backtest errors."
 >
-> Backup figures, only if asked: pooled MAE on the severity-weighted index is GLM 559.9, 12-month average 585.1, Random Forest 611.6. On the count it is 13.3 vs 13.7. The GLM is better in 14 of 24 areas. In 2026-01 to 2026-08 it scored 528.7 vs the average's 494.8. WAPE is 12.9%. The 80% range, fitted on 2025 errors, covered 79.7% of 2026 outcomes. Always guessing "below typical" would match 61.1% of tiers, beating every method (best 53.9%), so tier accuracy is never claimed as skill.
+> Backup figures, only if asked: pooled MAE on the severity-weighted index is GLM 713.1 vs 745.5 for the 12-month average, 4.3% lower. On the count it is 13.3 vs 13.7. The GLM is better in 14 of 24 areas. In 2026-01 to 2026-08 it scored 673.1 vs the average's 630.2. WAPE is 12.9%. The closest alternative, an extended GLM, was 1% worse overall. The 80% range, fitted on 2025 errors, covered 79.7% of 2026 outcomes. The colour matched the outcome 58.9% of the time, against 42.4% for always guessing the most common colour (macro-F1 0.583), but the plain average does as well, so that skill comes from comparing with the same month last year, not from the model. For a median area about 12% of a month's count is pure Poisson noise, so more than half of the remaining error can't be removed by any model.
 
 The one number to land is the gain over the plain 12-month average. Say it slowly.
 
@@ -72,7 +71,7 @@ If a judge follows up on predictive policing: "Its harm comes from a feedback lo
 Each answer takes about 15 seconds. The name in brackets is who answers.
 
 1. **How accurate is it, compared with a baseline?** (Chibueze)
-   Repeat the technical line, then add: "We fixed the rule for choosing the model before the final run, and we report the period where the average won. That's why the 12-month average sits beside every forecast."
+   Repeat the technical line, then add: "We fixed the rule for choosing the model before running the study, and we report the period where the average won. That's why the 12-month average sits beside every forecast."
 
 2. **Why was 2022 missing?** (Humberto)
    "VPD's all-years export simply doesn't contain 2022. We spotted a 12-month hole in the monthly totals, downloaded 2022 on its own, and merged its 34,323 rows. Filling it with zeros would have looked like activity collapsing for a year."
@@ -84,13 +83,13 @@ Each answer takes about 15 seconds. The name in brackets is who answers.
    "It averages about two reported incidents a month, so one extra incident moves it by 50%. Any colour would be noise. Areas averaging under 10 a month get 'insufficient data'. We keep it separate from Dunbar-Southlands rather than hiding it inside."
 
 5. **What did ML add, if the baseline is that strong?** (Chibueze)
-   "Honestly, little accuracy. It added a calibrated uncertainty range from backtest errors, month-of-year seasonality, and a fair, pre-registered test that tells you how much to trust it. Knowing that the baseline is strong is itself a result."
+   "Honestly, little accuracy, and more than half of the error left is noise no model can remove. It added a calibrated uncertainty range from backtest errors, month-of-year seasonality, and a fair, pre-registered test that tells you how much to trust it. Knowing that the baseline is strong is itself a result."
 
 6. **Why not per capita?** (Humberto)
    "Census population counts residents, not who is actually there. Downtown has far more workers and visitors than residents, so per capita would mislead. It's also published for the City's 22 local areas, not VPD's 24. And since each area is compared only with itself, population mostly cancels out."
 
 7. **How are the tiers defined?** (James)
-   "Each month is compared with that area's own average over the previous 36 complete months. Within plus or minus 5% is typical; lower is below typical, higher is above typical. A busy area can be typical and a quiet one above typical. Nothing is ranked across areas."
+   "Each month is compared with the same month one year earlier in that area. More than 10% lower is below typical, more than 10% higher is above typical, anything in between is typical. We picked that from 18 settings by how much better the colour does than always guessing the most common one. A busy area can be typical and a quiet one above typical. Nothing is ranked across areas."
 
 8. **What does the range mean?** (Chibueze)
    "It's where 80% of outcomes should land. We took actual-over-forecast ratios from held-out months, used the 10th and 90th percentiles, and multiplied the forecast by them. So about one month in five lands outside, and the app says so."
@@ -99,16 +98,16 @@ Each answer takes about 15 seconds. The name in brackets is who answers.
    "Put it in front of community groups and City staff and test whether 'unusual for this place' helps them. Then a weekly refresh from GeoDASH, per-type views, a correction for late-reported violent offences, and the clean table released as open data."
 
 10. **Why these weights?** (Chibueze)
-    "A plain count treats a bike theft and a break-in the same. We follow Statistics Canada's Crime Severity Index approach, where weights come from how often an offence leads to prison and for how long, so a break-in weighs about five times a theft. VPD publishes violent offences as one category, so they get one weight. The plain count is always shown beside the index."
-    If pushed: "The weights live in one config file. Changing them re-runs everything in about 30 seconds, and the count never changes."
+    "A plain count treats a bike theft and a break-in the same. We use Statistics Canada's published Crime Severity Index weights, from its 2009 report, Table 1. They come from how often an offence leads to prison and for how long: a break-in is 187, a theft under $5,000 is 37, so about five times. VPD publishes violent offences as one category, so it gets one weight, assault level 2 at 77. It's CSI-inspired, not the official CSI, and the plain count is always shown beside it."
+    If pushed: "The weights live in one config file, cited line by line. Changing them re-runs everything in about 40 seconds, and the count never changes."
 
 ## Pre-demo checklist
 
 ### By 12:30 PM
 
 - [ ] The final build is deployed. Open `<app-url>` in a private window and check that all 24 areas render in both modes.
-- [ ] Open Kitsilano in forecast mode and write its [N] and [tier] into the demo script above.
-- [ ] Check that **Play months** from October 2019 reaches mid-2020 in about 3 seconds and that spring 2020 turns mostly teal.
+- [ ] Open Kitsilano in forecast mode and check that the drawer shows about 97 reported incidents and above typical, as in the demo script above.
+- [ ] Check that **Play months** from October 2019 reaches June 2020 in about 3 seconds and that the map is mostly teal from May 2020.
 - [ ] Save all four bookmarks to the bookmarks bar.
 - [ ] Rehearse the full 3:00 twice with the stopwatch. Rehearse Q&A once.
 

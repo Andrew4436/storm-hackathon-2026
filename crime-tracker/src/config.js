@@ -26,17 +26,17 @@ export const META_DEFAULTS = {
   data_through: '2026-08', // last complete month
   forecast_month: '2026-10', // also names the static file: public/data/forecast_<forecast_month>.json
   horizon_months: 2,
-  tier_window_months: 36, // trailing window behind an area's "typical level" (tiers and pct_vs_typical)
-  tier_thresholds_pct: [-5, 5], // within these % of the typical level counts as typical
-  tier_reference: 'trailing_mean', // or 'seasonal': the typical level for that time of year
+  tier_window_months: 12, // trailing window behind an area's "typical level" (tiers and pct_vs_typical)
+  tier_thresholds_pct: [-10, 10], // within these % of the typical level counts as typical
+  tier_reference: 'seasonal', // or 'seasonal': the typical level for that time of year
   interval_level: 0.8, // share of outcomes the uncertainty range is built to hold
   // Held-out evaluation. Used only when the file has no evaluation block (never mixed with the file's numbers).
   evaluation: {
     wape_pct: 12.9,
     improvement_vs_mean_12_pct: 4.3,
     interval_coverage_pct: 79.7,
-    tier_accuracy_pct: 53.0,
-    tier_majority_baseline_pct: 61.1,
+    tier_accuracy_pct: 58.9,
+    tier_majority_baseline_pct: 42.4,
   },
 }
 

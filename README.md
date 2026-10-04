@@ -6,7 +6,7 @@ NeighbourCast is a map of Vancouver's 24 VPD neighbourhoods that asks one questi
 
 > Is this month unusual for this neighbourhood, compared with its own past?
 
-- Every colour compares an area only with its own trailing 36 complete months.
+- Every colour compares an area only with itself: the same calendar month one year earlier. More than 10% below it is below typical, more than 10% above it is above typical, anything in between is typical.
 - The smallest unit is one neighbourhood in one month. No streets, addresses or people.
 - It does not rank neighbourhoods and does not rate places to live or visit.
 
@@ -18,7 +18,7 @@ Live app: `<app-url>` · Demo video: `<video-url>` · Repo: https://github.com/A
 ## What the app does
 
 - **Historical mode:** pick any complete month from 2003-01 to 2026-08 with the slider or arrows, or press **Play months**.
-- **Forecast mode:** October 2026, forecast from data through August 2026 (a two-month horizon, because September 2026 is incomplete).
+- **Forecast mode:** October 2026, forecast from data through August 2026 (a two-month horizon, because September 2026 is incomplete). The October 2026 map has 8 areas below typical, 8 typical, 7 above typical and 1 with insufficient data (Musqueam).
 - **Drawer:** severity-weighted activity, the plain count of reported incidents, the uncertainty range, the 12-month average, and a 36-month sparkline.
 - **How this works:** method, limitations, evaluation and sources, inside the app.
 - **Shareable views:** the state lives in the URL, for example `/?mode=forecast&area=kitsilano`.
@@ -40,17 +40,18 @@ data/processed/neighbourhood_monthly.csv                   |
             |                                              |
             v                                              |
 ml/src/build_features.py -> evaluate.py -> forecast.py     |
-  baselines, Poisson GLM, Random Forest, backtest,         |
-  80% ranges, tiers                                        |
+  baselines, Poisson GLM, model study (5 candidates),      |
+  backtest, 80% ranges, tiers                              |
             |                                              |
-            +--> reports/evaluation.md                     |
+            +--> reports/evaluation.md, model_study.md     |
             v                                              |
-ml/outputs/history.json, forecast_2026-10.json             |
+ml/outputs/history.json, forecast_2026-10.json, meta.json  |
             |                                              |
      +------+-----------------------+                      |
-     v                              v                      |
+     v                              v  (npm run sync-data) |
 backend/ (FastAPI)          crime-tracker/public/data/ <---+
-  /history /forecast          (static copy, the default)
+  /health /meta /areas        (static copy, the default)
+  /history /forecast                |
   /boundaries                       |
      |                              |
      +-------------+----------------+
@@ -86,20 +87,20 @@ python ml/src/evaluate.py
 python ml/src/forecast.py
 ```
 
-- Run the three commands in this order, from the repo root. The whole pipeline takes about 30 seconds and is deterministic.
-- Outputs: `ml/outputs/history.json`, `ml/outputs/forecast_2026-10.json` and `reports/evaluation.md`.
-- Every setting (weights, horizon, folds, tier window and thresholds) lives in `ml/config.py`.
+- Run the three commands in this order, from the repo root. The whole pipeline takes about 40 seconds and is deterministic. `evaluate.py` also runs the model and tier studies (`ml/src/study.py`).
+- Outputs: `ml/outputs/history.json`, `ml/outputs/forecast_2026-10.json`, `ml/outputs/meta.json`, `reports/evaluation.md` and `reports/model_study.md`.
+- Every setting (severity weights, horizon, folds, model selection rule, tier window, thresholds and reference) lives in `ml/config.py`. See `ml/README.md`.
 
 ### 3. Backend (optional: the app runs on static files without it)
 
 ```bash
 # run from the repo root
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 uvicorn backend.app:app --reload --port 8000
 ```
 
-- Check http://localhost:8000/health. The app reads `/history`, `/forecast` and `/boundaries`.
-- It serves the files from `ml/outputs/` as they are.
+- Routes: `/health`, `/meta`, `/areas`, `/history`, `/forecast`, `/boundaries`. Check http://localhost:8000/health first. The app reads `/meta`, `/history`, `/forecast` and `/boundaries`.
+- It serves the files from `ml/outputs/` as they are. Details are in `backend/README.md`.
 
 ### 4. Frontend
 
@@ -110,10 +111,9 @@ npm run dev        # http://localhost:5173
 ```
 
 - By default it reads `crime-tracker/public/data/`. To use the backend, put `VITE_API_URL=http://localhost:8000` in `crime-tracker/.env.local`.
-- After re-running the ML pipeline, copy the outputs into the app (PowerShell: `Copy-Item`):
-  `cp ml/outputs/history.json ml/outputs/forecast_2026-10.json crime-tracker/public/data/`
+- After re-running the ML pipeline, run `npm run sync-data` in `crime-tracker/`. It copies `meta.json`, `history.json` and the forecast file from `ml/outputs/` into `crime-tracker/public/data/`.
 - Production build: `npm run build`, then `npm run preview` (http://localhost:4173).
-- Dates shown in the app come from `crime-tracker/src/config.js`.
+- The last complete month, the forecast month, the tier wording and every evaluation figure the app shows come from `meta.json`. `crime-tracker/src/config.js` holds only the first month, the partial-month note and fallbacks used if `meta.json` is missing. See `crime-tracker/README.md`.
 
 ## Branch map
 
@@ -121,7 +121,7 @@ npm run dev        # http://localhost:5173
 |---|---|---|
 | `main` | Andrew | The release: everything merged, this README, `docs/` |
 | `data-pipeline` | Humberto | `data/`: raw CSV, cleaning notebook, processed CSV, data README |
-| `ml-forecast` | Chibueze | `ml/` and `reports/evaluation.md` |
+| `ml-forecast` | Chibueze | `ml/`, `reports/evaluation.md` and `reports/model_study.md` |
 | `backend-contract` | Andrew | `backend/`: the FastAPI service |
 | `frontend-contract` | James | `crime-tracker/`: the map app |
 
@@ -134,7 +134,7 @@ The team contract is `docs/ML_TEAM_CONTRACT.md`. Data rules are in `data/README.
 - **Coverage:** 2003-01-01 to 2026-09-25. September 2026 holds about 70% of a normal month, so it is flagged `is_partial` and never used for training, evaluation or display.
 - **Cleaning:** 962,117 rows to 942,457. We dropped 106 rows with no neighbourhood, plus homicide and both vehicle collision types (collisions were recorded differently from 2014).
 - **No de-duplication:** 42% of Offence Against a Person rows are exact copies because VPD redacts their time and location. They are separate incidents.
-- **Targets:** a severity-weighted index (per-type weights following the Statistics Canada Crime Severity Index approach) and the plain count of reported incidents.
+- **Targets:** a severity-weighted index and the plain count of reported incidents. The weights are Statistics Canada's published Crime Severity Index weights (catalogue 85-004-X, 2009, Table 1, https://www150.statcan.gc.ca/n1/pub/85-004-x/2009001/t001-eng.htm): theft under $5,000 = 37 for Other Theft, Theft from Vehicle and Theft of Bicycle; mischief = 30; assault level 2 = 77 for Offence Against a Person; breaking and entering = 187 for both Break and Enter types; theft of a motor vehicle = 84. The index is CSI-inspired, not the official CSI: 8 VPD types, per neighbourhood-month, no population denominator. The mapping is explained in `ml/README.md` ("Severity weights").
 - **Map join:** VPD "Central Business District" is the City polygon "Downtown". Musqueam is never merged into Dunbar-Southlands.
 
 ## Disclaimer
@@ -147,10 +147,12 @@ The team contract is `docs/ML_TEAM_CONTRACT.md`. Data rules are in `data/README.
 
 ## Evaluation summary
 
-<!-- refresh from reports/evaluation.md -->
-- **Shipped model:** a Poisson GLM, picked by a rule fixed before the final run: lower pooled MAE on the severity-weighted index (GLM 559.9, Random Forest 611.6) over 20 held-out months, 2025-01 to 2026-08.
-- **Against a plain 12-month average (585.1):** only 4.3% lower error on the index (3.2% on the count), better in 14 of 24 areas, and worse in 2026-01 to 2026-08 (528.7 vs 494.8). The app shows that average beside every forecast.
-- **Uncertainty:** the 80% range comes from backtest ratios. Using fold A ratios, it covered 79.7% of fold B outcomes. Tier accuracy is not presented as skill. Full tables are in `reports/evaluation.md`.
+- **Shipped model:** a Poisson GLM. Before the model study we wrote down the rule: a candidate replaces the GLM only if its MAE on the severity-weighted index is at least 1% lower on 2026-01 to 2026-08 and lower pooled over both test periods. Five alternatives were tested on the same rows (per-type GLMs, an extended GLM, Poisson gradient boosting, a stacked blend, a per-area correction). None qualified, so the GLM stays (`reports/model_study.md`).
+- **Against a plain 12-month average:** over 20 held-out months (2025-01 to 2026-08, 480 neighbourhood-months), pooled MAE on the index is 713.1 vs 745.5, 4.3% lower. On the count it is 13.3 vs 13.7 reported incidents. WAPE is 12.9%. The GLM is better in 14 of 24 areas, and worse in 2026-01 to 2026-08 alone (673.1 vs 630.2). The app shows that average beside every forecast.
+- **Uncertainty:** the 80% range comes from backtest ratios of actual to forecast. Fitted on 2025 errors only, it covered 79.7% of 2026 outcomes.
+- **Tiers:** the forecast's colour matched the realised colour 58.9% of the time, against 42.4% for always guessing the most common tier (macro-F1 0.583). The plain 12-month average does as well (59.1%), so that skill comes from the same-month-last-year reference, not from the model. The rule was picked from an 18-setting grid; no setting met both pre-registered constraints, and the fallback used is disclosed in `reports/model_study.md`.
+- **Noise floor:** for the median area (Marpole, about 66 reported incidents a month) roughly 12% of a month's count is Poisson noise, so more than half of the remaining error is irreducible.
+- Every evaluation number the app shows comes from `ml/outputs/meta.json`. Full tables are in `reports/evaluation.md`.
 
 ## Team
 
@@ -168,4 +170,4 @@ The team contract is `docs/ML_TEAM_CONTRACT.md`. Data rules are in `data/README.
 - **Map data:** © OpenStreetMap contributors, available under the Open Database Licence (fallback basemap).
 - **Basemap tiles:** Esri World Dark Gray Canvas, © Esri and its data providers.
 - **Map library:** Leaflet (BSD 2-Clause licence), with react-leaflet.
-- **Severity weights:** follow the Statistics Canada Crime Severity Index approach. NeighbourCast's index is not a Statistics Canada statistic.
+- **Severity weights:** Statistics Canada, *Measuring Crime in Canada: Introducing the Crime Severity Index and Improvements to the Uniform Crime Reporting Survey*, catalogue 85-004-X (2009), Table 1, https://www150.statcan.gc.ca/n1/pub/85-004-x/2009001/t001-eng.htm. NeighbourCast's index is CSI-inspired; it is not the official Crime Severity Index and not a Statistics Canada statistic.
