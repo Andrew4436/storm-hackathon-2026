@@ -1,0 +1,194 @@
+{
+  "shipped_model": "poisson_glm",
+  "selection_reason": "no candidate qualified; the reference GLM stays",
+  "qualifiers": [],
+  "selection_table": [
+    {
+      "method": "per_type_glm",
+      "mae_B": 757.4693,
+      "mae_pooled": 831.7901,
+      "gain_B_pct": -12.5417,
+      "gain_pooled_pct": -16.6492,
+      "n_params": 152,
+      "qualifies": false
+    },
+    {
+      "method": "glm_extended",
+      "mae_B": 681.7881,
+      "mae_pooled": 720.0351,
+      "gain_B_pct": -1.2973,
+      "gain_pooled_pct": -0.9768,
+      "n_params": 22,
+      "qualifies": false
+    },
+    {
+      "method": "hgb_poisson",
+      "mae_B": 687.3579,
+      "mae_pooled": 764.3541,
+      "gain_B_pct": -2.1248,
+      "gain_pooled_pct": -7.1921,
+      "n_params": 2900,
+      "qualifies": false
+    },
+    {
+      "method": "hgb_glm_blend",
+      "mae_B": 676.3395,
+      "mae_pooled": 732.8966,
+      "gain_B_pct": -0.4877,
+      "gain_pooled_pct": -2.7805,
+      "n_params": 2922,
+      "qualifies": false
+    },
+    {
+      "method": "stacked_blend",
+      "mae_B": 681.7881,
+      "mae_pooled": 720.0351,
+      "gain_B_pct": -1.2973,
+      "gain_pooled_pct": -0.9768,
+      "n_params": 176,
+      "qualifies": false
+    }
+  ],
+  "reference_model": "poisson_glm",
+  "c2_variant": {
+    "weighted_index": "extended",
+    "incident_count": "extended"
+  },
+  "stack_weights": {
+    "weighted_index": {
+      "per_type_glm": 0.0,
+      "glm_extended": 1.0,
+      "mean_12": 0.0
+    },
+    "incident_count": {
+      "per_type_glm": 0.0,
+      "glm_extended": 1.0,
+      "mean_12": 0.0
+    }
+  },
+  "hgb_trees": {
+    "weighted_index": {
+      "A": 100,
+      "B": 100
+    },
+    "incident_count": {
+      "A": 100,
+      "B": 120
+    }
+  },
+  "n_params": {
+    "weighted_index": {
+      "poisson_glm": 18,
+      "poisson_glm_area": 42,
+      "per_type_glm": 152,
+      "glm_extended_noTM": 22,
+      "glm_extended_TM": 25,
+      "random_forest": 466480,
+      "hgb_poisson": 2900,
+      "glm_extended": 22,
+      "mean_12": 0,
+      "hgb_glm_blend": 2922,
+      "stacked_blend": 176,
+      "blend": 18
+    },
+    "incident_count": {
+      "poisson_glm": 18,
+      "poisson_glm_area": 42,
+      "per_type_glm": 152,
+      "glm_extended_noTM": 22,
+      "glm_extended_TM": 25,
+      "random_forest": 465192,
+      "hgb_poisson": 3480,
+      "glm_extended": 22,
+      "mean_12": 0,
+      "hgb_glm_blend": 3502,
+      "stacked_blend": 176,
+      "blend": 18
+    }
+  },
+  "area_correction_parent": "glm_extended",
+  "area_correction": {
+    "fold_B_mae_parent": 681.7881,
+    "fold_B_mae_corrected": 707.984,
+    "gain_pct": -3.8422,
+    "adopted": false
+  },
+  "area_factors": {
+    "weighted_index": {
+      "Arbutus Ridge": 1.0355,
+      "Central Business District": 0.9095,
+      "Dunbar-Southlands": 0.9469,
+      "Fairview": 1.0207,
+      "Grandview-Woodland": 0.9709,
+      "Hastings-Sunrise": 1.0589,
+      "Kensington-Cedar Cottage": 1.0793,
+      "Kerrisdale": 0.8711,
+      "Killarney": 0.9357,
+      "Kitsilano": 0.9707,
+      "Marpole": 0.9893,
+      "Mount Pleasant": 1.0493,
+      "Musqueam": 1.25,
+      "Oakridge": 0.8873,
+      "Renfrew-Collingwood": 1.0034,
+      "Riley Park": 1.0242,
+      "Shaughnessy": 0.8,
+      "South Cambie": 1.002,
+      "Stanley Park": 1.102,
+      "Strathcona": 0.9476,
+      "Sunset": 1.0723,
+      "Victoria-Fraserview": 0.905,
+      "West End": 0.9822,
+      "West Point Grey": 1.0964
+    },
+    "incident_count": {
+      "Arbutus Ridge": 0.9125,
+      "Central Business District": 0.9327,
+      "Dunbar-Southlands": 0.9064,
+      "Fairview": 1.0083,
+      "Grandview-Woodland": 1.0225,
+      "Hastings-Sunrise": 1.0528,
+      "Kensington-Cedar Cottage": 1.1194,
+      "Kerrisdale": 0.9756,
+      "Killarney": 1.0214,
+      "Kitsilano": 0.9501,
+      "Marpole": 0.996,
+      "Mount Pleasant": 1.0773,
+      "Musqueam": 0.9365,
+      "Oakridge": 1.1015,
+      "Renfrew-Collingwood": 1.0342,
+      "Riley Park": 1.0337,
+      "Shaughnessy": 0.8,
+      "South Cambie": 0.9014,
+      "Stanley Park": 1.03,
+      "Strathcona": 0.9986,
+      "Sunset": 1.0849,
+      "Victoria-Fraserview": 0.929,
+      "West End": 1.0074,
+      "West Point Grey": 0.9517
+    }
+  },
+  "noise_floor_mae": {
+    "incident_count": 7.1064,
+    "weighted_index": 474.1447
+  },
+  "typical_area_noise": {
+    "median_area": "Marpole",
+    "median_area_incidents": 65.9167,
+    "incident_count_pct": 12.3169,
+    "weighted_index_pct": 16.0299,
+    "incident_count_pct_median_over_areas": 13.1314,
+    "weighted_index_pct_median_over_areas": 17.1067
+  },
+  "tier_choice": {
+    "window": 12,
+    "low": -10.0,
+    "high": 10.0,
+    "reference": "seasonal",
+    "skill": 0.1596,
+    "tier_accuracy": 0.5891,
+    "tier_macro_f1": 0.5835,
+    "tier_majority_baseline": 0.4239,
+    "history_share_typical": 0.2455,
+    "choice_basis": "fallback: no cell met both constraints; best skill with a readable map"
+  }
+}
