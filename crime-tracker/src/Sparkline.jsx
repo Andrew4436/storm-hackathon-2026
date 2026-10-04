@@ -1,4 +1,4 @@
-import { SPARK_MONTHS, TIERS } from './config.js'
+import { SPARK_MONTHS } from './config.js'
 import { fmtNum, monthLabel } from './format.js'
 
 const W = 320
@@ -10,8 +10,9 @@ const PAD = { l: 4, r: 8, t: 8, b: 6 }
  * Historical: the window ends at (or, early in the record, contains) the selected month, which is marked.
  * Forecast: the last 36 complete months, then the forecast point with its uncertainty range, `forecast.horizon`
  * months after the last one.
+ * `fill` colours the marked dot with the area's place on the map's colour scale; null leaves it plain.
  */
-export default function Sparkline({ series, month, forecast, tier }) {
+export default function Sparkline({ series, month, forecast, fill }) {
   if (!series?.length) return null
   const idx = forecast ? series.length - 1 : series.findIndex((r) => r.month === month)
   if (idx < 0) return null
@@ -54,7 +55,7 @@ export default function Sparkline({ series, month, forecast, tier }) {
               cy={y(forecast.value)}
               r="4"
               className="spark__dot"
-              style={{ fill: TIERS[tier]?.hatch ? undefined : TIERS[tier]?.fill }}
+              style={fill ? { fill } : undefined}
             />
           </g>
         ) : (
@@ -65,7 +66,7 @@ export default function Sparkline({ series, month, forecast, tier }) {
               cy={y(mark.weighted_index)}
               r="4"
               className="spark__dot"
-              style={{ fill: TIERS[tier]?.hatch ? undefined : TIERS[tier]?.fill }}
+              style={fill ? { fill } : undefined}
             />
           </g>
         )}

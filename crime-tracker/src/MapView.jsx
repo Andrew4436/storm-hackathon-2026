@@ -3,8 +3,9 @@ import { MapContainer, TileLayer, GeoJSON, CircleMarker, Pane, ZoomControl, useM
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { AREAS, AREA_BY_POLYGON } from './areas.js'
-import { HATCH_ID, MAP_STYLE, TIERS } from './config.js'
+import { MAP_STYLE } from './config.js'
 import { recordFor } from './api.js'
+import { fillFor } from './scale.js'
 
 const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 const DATA_ATTR =
@@ -255,8 +256,11 @@ function FitToAreas({ bounds, measure, observe, fitKey }) {
   return null
 }
 
-function styleFor(tier, { selected, dimmed, hovered }, marker = false) {
-  const t = TIERS[tier] ?? TIERS.none
+/**
+ * Path options for one area. `fillColor` is the record's place on the continuous scale (or the hatch, or the
+ * "no reference" fill) from fillFor, the same mapping for polygons and the two circle markers.
+ */
+function styleFor(rec, { selected, dimmed, hovered }, marker = false) {
   let fillOpacity = MAP_STYLE.fillOpacity
   if (dimmed) fillOpacity = MAP_STYLE.dimFillOpacity
   if (hovered) fillOpacity = MAP_STYLE.hoverFillOpacity
@@ -273,7 +277,7 @@ function styleFor(tier, { selected, dimmed, hovered }, marker = false) {
     opacity = 1
     weight = MAP_STYLE.selectedWeight
   }
-  return { fillColor: t.hatch ? `url(#${HATCH_ID})` : t.fill, fillOpacity, color, opacity, weight }
+  return { fillColor: fillFor(rec), fillOpacity, color, opacity, weight }
 }
 
 const viewState = (name, selected, highlighted) => ({
@@ -322,7 +326,7 @@ function AreasLayer({ data, features, mode, month, selected, highlighted, onSele
   // Initial styles, used once when the layers are created; later changes go through setStyle below.
   const [initial] = useState(() => {
     const style = (name, marker) =>
-      styleFor(recordFor(data, mode, month, name)?.tier ?? 'none', viewState(name, selected, highlighted), marker)
+      styleFor(recordFor(data, mode, month, name), viewState(name, selected, highlighted), marker)
     return {
       polygon: (feature) => style(AREA_BY_POLYGON.get(feature.properties?.name)?.name, false),
       markers: Object.fromEntries(MARKER_AREAS.map((a) => [a.name, style(a.name, true)])),
@@ -331,9 +335,7 @@ function AreasLayer({ data, features, mode, month, selected, highlighted, onSele
 
   useEffect(() => {
     const restyle = (layer, name, marker) =>
-      layer.setStyle(
-        styleFor(recordFor(data, mode, month, name)?.tier ?? 'none', viewState(name, selected, highlighted), marker),
-      )
+      layer.setStyle(styleFor(recordFor(data, mode, month, name), viewState(name, selected, highlighted), marker))
     geoRef.current?.eachLayer((l) => restyle(l, polygonName(l), false))
     for (const [name, l] of markerRefs.current) restyle(l, name, true)
   }, [ready, data, mode, month, selected, highlighted])

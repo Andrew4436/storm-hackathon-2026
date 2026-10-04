@@ -1,18 +1,12 @@
-import { TIERS } from './config.js'
+import { FILL_NONE } from './config.js'
+import { HATCH_FILL } from './scale.js'
 
-const tierOf = (tier) => (TIERS[tier] ? tier : 'none')
-
-/** Colour chip for a tier. Colour is decoration only; a text label always sits next to it. */
-export function Swatch({ tier }) {
-  return <span className={`swatch swatch--${tierOf(tier)}`} aria-hidden="true" />
-}
-
-/** Tier word in a pill, with its swatch. The only place a tier colour sits beside text. */
-export function TierChip({ tier }) {
-  return (
-    <span className="chip">
-      <Swatch tier={tier} />
-      {TIERS[tierOf(tier)].label}
-    </span>
-  )
+/**
+ * A small colour chip for a map fill (fillFor in scale.js): a scale colour, the hatch, or the "no reference" fill.
+ * Colour is decoration only; a text label always sits next to it.
+ */
+export function Swatch({ fill }) {
+  if (fill === HATCH_FILL) return <span className="swatch swatch--hatch" aria-hidden="true" />
+  if (fill === FILL_NONE) return <span className="swatch swatch--none" aria-hidden="true" />
+  return <span className="swatch" style={{ background: fill }} aria-hidden="true" />
 }

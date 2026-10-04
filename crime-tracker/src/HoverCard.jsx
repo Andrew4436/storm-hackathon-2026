@@ -1,8 +1,9 @@
 import { useLayoutEffect, useRef } from 'react'
-import { MINI_SPARK_MONTHS } from './config.js'
+import { LABEL_INSUFFICIENT, LABEL_NONE, MINI_SPARK_MONTHS } from './config.js'
 import { recordFor } from './api.js'
-import { fmtNum } from './format.js'
-import { TierChip } from './Swatch.jsx'
+import { deviationShort, fmtNum, topChance } from './format.js'
+import { fillFor } from './scale.js'
+import { Swatch } from './Swatch.jsx'
 
 const OFFSET = 14
 const W = 250
@@ -37,10 +38,31 @@ function MiniSpark({ series, month, forecast }) {
   )
 }
 
+/**
+ * One line with the area's colour: in forecast mode the largest of the three chances ("Above usual: 72%"), in
+ * historical mode how far the month was from its usual level ("15% above usual").
+ */
+function Headline({ rec, mode, meta }) {
+  if (!rec) return null
+  let text
+  if (rec.kind === 'insufficient_data') text = LABEL_INSUFFICIENT
+  else if (rec.kind === 'none') text = LABEL_NONE
+  else if (mode === 'forecast' && rec.probs) {
+    const top = topChance(rec.probs, rec.likely, meta)
+    text = `${top.label}: ${top.pct}%`
+  } else text = deviationShort(rec.pct_vs_typical)
+  return (
+    <p className="hover-card__line">
+      <Swatch fill={fillFor(rec)} />
+      {text}
+    </p>
+  )
+}
+
 function Figures({ rec, mode }) {
   if (!rec) return <p className="hover-card__figs">No data for this month</p>
   if (mode === 'forecast') {
-    if (rec.tier === 'insufficient_data') return <p className="hover-card__figs">Too few incidents to forecast</p>
+    if (rec.kind === 'insufficient_data') return <p className="hover-card__figs">Too few incidents to forecast</p>
     return (
       <p className="hover-card__figs">
         <span>Forecast {fmtNum(rec.forecast_weighted_index)}</span>
@@ -81,7 +103,7 @@ export default function HoverCard({ hover, data, mode, month, rightInset = 0 }) 
   const rec = recordFor(data, mode, month, name)
   const series = data.seriesByArea.get(name) ?? []
   const forecast =
-    mode === 'forecast' && rec && rec.tier !== 'insufficient_data'
+    mode === 'forecast' && rec && rec.kind !== 'insufficient_data'
       ? {
           value: rec.forecast_weighted_index,
           low: rec.interval_low,
@@ -93,7 +115,7 @@ export default function HoverCard({ hover, data, mode, month, rightInset = 0 }) 
   return (
     <div className="hover-card" ref={ref} aria-hidden="true">
       <p className="hover-card__name">{name}</p>
-      <TierChip tier={rec?.tier ?? 'none'} />
+      <Headline rec={rec} mode={mode} meta={data.meta} />
       <Figures rec={rec} mode={mode} />
       <MiniSpark series={series} month={mode === 'forecast' ? data.meta.data_through : month} forecast={forecast} />
     </div>

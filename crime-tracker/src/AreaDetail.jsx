@@ -1,16 +1,24 @@
 import { SPARK_MONTHS } from './config.js'
 import { recordFor } from './api.js'
-import { bandText, fmtNum, intervalPct, monthLabel, numberWord, pctText, typicalLevelText } from './format.js'
+import {
+  bandWords,
+  deviationText,
+  fmtNum,
+  intervalPct,
+  likelyText,
+  monthLabel,
+  numberWord,
+  usualLevelNote,
+  wholePercents,
+} from './format.js'
+import { colourFor, fillFor } from './scale.js'
 import Sparkline from './Sparkline.jsx'
-import { TierChip } from './Swatch.jsx'
+import { Swatch } from './Swatch.jsx'
 
-/** "12% above this area's typical level (36-month average). Typical means within 5% of that level." */
-function compareText(rec, meta) {
-  if (rec.tier === 'insufficient_data') return null
-  if (rec.tier === 'none') return 'Comparisons start once an area has 12 months of history.'
-  if (rec.pct_vs_typical == null) return null
-  return `${pctText(rec.pct_vs_typical, meta)}. ${bandText(meta)}`
-}
+const NO_REFERENCE = 'No usual level to compare with yet: an area needs 12 months of history first.'
+
+/** The dot colour for the sparklines: the area's place on the scale, or none (hatch and "no reference"). */
+const dotFill = (rec) => (rec?.kind === 'value' ? fillFor(rec) : null)
 
 /** Uncertainty range as a horizontal bar: the band, the forecast point and the 12-month baseline tick. */
 function RangeBar({ low, high, value, baseline }) {
@@ -37,9 +45,58 @@ function RangeBar({ low, high, value, baseline }) {
   )
 }
 
+// Segments of the probability bar, left to right like the legend: below (teal), within (neutral), above (amber).
+const SEGMENTS = [
+  { key: 'below', v: -1, name: 'Below usual' },
+  { key: 'within', v: 0, name: null }, // named from the band: "Within 10%"
+  { key: 'above', v: 1, name: 'Above usual' },
+]
+const MIN_LABEL_PCT = 12 // a segment narrower than this shows no number inside (the sentence below has it)
+
+/**
+ * The three chances for the forecast month as one stacked bar, a key, and the sentence that carries the numbers:
+ * "63% chance above its usual level for October, 15% chance below, 22% chance within 10% of it."
+ */
+function Chances({ rec, meta }) {
+  const pct = wholePercents(rec.probs)
+  const month = monthLabel(meta.forecast_month).split(' ')[0]
+  const band = bandWords(meta)
+  const withinName = band.charAt(0).toUpperCase() + band.slice(1).replace(/ of$/, '')
+  return (
+    <section className="chances">
+      <h3 className="detail__h3 chances__title">Chance of ending above or below its usual level</h3>
+      <div className="chances__bar" aria-hidden="true">
+        {SEGMENTS.map((s) =>
+          pct[s.key] > 0 ? (
+            <span
+              key={s.key}
+              className="chances__seg"
+              style={{ flexGrow: pct[s.key], background: colourFor(s.v) }}
+            >
+              {pct[s.key] >= MIN_LABEL_PCT ? `${pct[s.key]}%` : ''}
+            </span>
+          ) : null,
+        )}
+      </div>
+      <ul className="chances__key" aria-hidden="true">
+        {SEGMENTS.map((s) => (
+          <li key={s.key}>
+            <Swatch fill={colourFor(s.v)} />
+            {s.name ?? withinName}
+          </li>
+        ))}
+      </ul>
+      <p className="detail__text chances__text">
+        {pct.above}% chance above its usual level for {month}, {pct.below}% chance below, {pct.within}% chance{' '}
+        {band} it.
+      </p>
+      {rec.likely && <p className="chances__likely">Most likely: {likelyText(rec.likely, meta)} ({Math.round(100 * Math.max(rec.probs?.above ?? 0, rec.probs?.below ?? 0, rec.probs?.within ?? 0))}%)</p>}
+    </section>
+  )
+}
+
 function HistoricalDetail({ data, name, month, rec }) {
-  const cmp = compareText(rec, data.meta)
-  const insufficient = rec.tier === 'insufficient_data'
+  const { meta } = data
   return (
     <>
       <dl className="figures">
@@ -52,28 +109,34 @@ function HistoricalDetail({ data, name, month, rec }) {
           <dd>{fmtNum(rec.incident_count)}</dd>
         </div>
       </dl>
-      {insufficient && <p className="detail__text">Too few reported incidents here to compare one month with another.</p>}
-      {cmp && <p className="detail__text">{cmp}</p>}
+      {rec.kind === 'insufficient_data' && (
+        <p className="detail__text">Too few reported incidents here to compare one month with another.</p>
+      )}
+      {rec.kind === 'none' && <p className="detail__text">{NO_REFERENCE}</p>}
+      {rec.kind === 'value' && (
+        <>
+          <p className="detail__text">{deviationText(rec.pct_vs_typical, meta)}.</p>
+          <p className="detail__note">{usualLevelNote(meta)}</p>
+        </>
+      )}
       <h3 className="detail__h3">Severity-weighted activity, {SPARK_MONTHS} months</h3>
-      <Sparkline series={data.seriesByArea.get(name)} month={month} tier={rec.tier} />
+      <Sparkline series={data.seriesByArea.get(name)} month={month} fill={dotFill(rec)} />
     </>
   )
 }
 
 function ForecastDetail({ data, name, rec }) {
   const { meta } = data
-  const insufficient = rec.tier === 'insufficient_data'
-  const cmp = compareText(rec, meta)
   const horizon = rec.horizon_months ?? meta.horizon_months
   const series = data.seriesByArea.get(name)
-  if (insufficient) {
+  if (rec.kind === 'insufficient_data') {
     return (
       <>
         <p className="detail__text">
           Too few reported incidents here to forecast meaningfully, so this area has no forecast number.
         </p>
         <h3 className="detail__h3">Severity-weighted activity, {SPARK_MONTHS} months</h3>
-        <Sparkline series={series} month={meta.data_through} tier={rec.tier} />
+        <Sparkline series={series} month={meta.data_through} fill={null} />
       </>
     )
   }
@@ -90,16 +153,24 @@ function ForecastDetail({ data, name, rec }) {
         value={rec.forecast_weighted_index}
         baseline={rec.baseline_weighted_index}
       />
-      {cmp && <p className="detail__text">{cmp}</p>}
+      {rec.probs ? (
+        <Chances rec={rec} meta={meta} />
+      ) : rec.kind === 'value' && rec.pct_vs_typical != null ? (
+        // An older forecast file without chances: the forecast's own deviation instead.
+        <p className="detail__text">The forecast is {deviationText(rec.pct_vs_typical, meta).replace(/^A/, 'a')}.</p>
+      ) : (
+        <p className="detail__text">{NO_REFERENCE}</p>
+      )}
       <p className="detail__note">
-        The typical level is {typicalLevelText(meta)}. The 12-month average is the simple baseline the forecast is
-        tested against. The range covers {intervalPct(meta)}% of likely outcomes.
+        {usualLevelNote(meta)} The chances come from how far past forecasts landed from what happened. The
+        12-month average is the simple baseline the forecast is tested against. The range covers{' '}
+        {intervalPct(meta)}% of likely outcomes.
       </p>
       <h3 className="detail__h3">Severity-weighted activity, {SPARK_MONTHS} months and forecast</h3>
       <Sparkline
         series={series}
         month={meta.data_through}
-        tier={rec.tier}
+        fill={dotFill(rec)}
         forecast={{
           month: rec.month,
           value: rec.forecast_weighted_index,
@@ -118,7 +189,6 @@ function ForecastDetail({ data, name, rec }) {
 
 export default function AreaDetail({ data, mode, month, name }) {
   const rec = recordFor(data, mode, month, name)
-  const tier = rec?.tier ?? 'none'
   return (
     <article className="detail">
       <header className="detail__head">
@@ -126,7 +196,6 @@ export default function AreaDetail({ data, mode, month, name }) {
         <p className="detail__month">
           {mode === 'forecast' ? `Forecast for ${monthLabel(data.meta.forecast_month)}` : monthLabel(month)}
         </p>
-        <TierChip tier={tier} />
       </header>
       {!rec && <p className="detail__text">No data for this month.</p>}
       {rec && mode === 'historical' && <HistoricalDetail data={data} name={name} month={month} rec={rec} />}

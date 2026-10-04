@@ -14,12 +14,13 @@
   --fog-wash: rgba(238, 242, 247, 0.16); /* fog-100 at 16%: uncertainty bands */
   --fog-edge: rgba(238, 242, 247, 0.35); /* fog-100 at 35%: band outline */
 
-  /* Tiers: only on map fills, swatches and chips. Keep in sync with config.js. */
-  --tier-below: #4fb3ac;
-  --tier-typical: #7a8699;
-  --tier-above: #e7a64e;
-  --tier-none: #33415c;
-  --tier-insufficient: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='%23152036'/%3E%3Cpath d='M-1 1l2-2M0 6l6-6M5 7l2-2' stroke='%23A6B2C5' stroke-width='1.2'/%3E%3C/svg%3E");
+  /* The continuous colour scale's three stops (SCALE in config.js; scale.js interpolates in OKLab) and the two
+     fills off the scale. Only on map fills, the legend, swatches and the chance bar. Keep in sync with config.js. */
+  --scale-below: #4fb3ac;
+  --scale-mid: #7a8699;
+  --scale-above: #e7a64e;
+  --fill-none: #33415c;
+  --fill-insufficient: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='%23152036'/%3E%3Cpath d='M-1 1l2-2M0 6l6-6M5 7l2-2' stroke='%23A6B2C5' stroke-width='1.2'/%3E%3C/svg%3E");
 
   --focus: #ffd166;
 

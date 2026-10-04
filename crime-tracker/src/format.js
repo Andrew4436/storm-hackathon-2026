@@ -32,50 +32,86 @@ export const numberWord = (n) => WORDS[n] ?? fmtNum(n)
 
 const seasonal = (meta) => meta.tier_reference === 'seasonal'
 
-/** What an area's typical level is: "the area's average over the previous 36 complete months". */
-export function typicalLevelText(meta) {
+/** "An area's usual level is worked out from the same time of year in the previous 12 complete months." */
+export function usualLevelNote(meta) {
   const w = meta.tier_window_months
   return seasonal(meta)
-    ? `the area’s usual level for that time of year, worked out from the previous ${w} complete months`
-    : `the area’s average over the previous ${w} complete months`
+    ? `An area’s usual level is worked out from the same time of year in the previous ${w} complete months.`
+    : `An area’s usual level is its average over the previous ${w} complete months.`
 }
 
-/**
- * "12% above this area's typical level (36-month average)" from pct_vs_typical. Within a point of a tier
- * threshold it keeps one decimal ("5.3% above"), so the figure never contradicts the colour.
- */
-export function pctText(pct, meta) {
-  const w = meta.tier_window_months
-  const typical = seasonal(meta)
-    ? `this area’s typical level for the time of year (last ${w} months)`
-    : `this area’s typical level (${w}-month average)`
-  const [lo, hi] = meta.tier_thresholds_pct
-  const nearEdge = Math.abs(Math.abs(pct) - (pct < 0 ? -lo : hi)) < 1
-  const shown = nearEdge ? nfUpTo1.format(Math.abs(pct)) : nf.format(Math.abs(Math.round(pct)))
-  if (shown === '0') return `About the same as ${typical}`
-  return `${shown}% ${pct > 0 ? 'above' : 'below'} ${typical}`
+/** "its usual level for the time of year" (seasonal) or "its 12-month average". */
+const usualRef = (meta) =>
+  seasonal(meta) ? 'its usual level for the time of year' : `its ${meta.tier_window_months}-month average`
+
+/** "15% above its usual level for the time of year" from pct_vs_typical (a realised or forecast deviation). */
+export function deviationText(pct, meta) {
+  const shown = nf.format(Math.abs(Math.round(pct)))
+  if (shown === '0') return `About the same as ${usualRef(meta)}`
+  return `${shown}% ${pct > 0 ? 'above' : 'below'} ${usualRef(meta)}`
 }
 
-/** The tier thresholds as two numbers, "5" and "5" for [-5, 5]. */
+/** "15% above usual" for the hover card. */
+export function deviationShort(pct) {
+  const shown = nf.format(Math.abs(Math.round(pct)))
+  return shown === '0' ? 'About usual' : `${shown}% ${pct > 0 ? 'above' : 'below'} usual`
+}
+
+/** The band around the usual level as two numbers: "10" and "10" for [-10, 10]. */
 function bounds(meta) {
   const [lo, hi] = meta.tier_thresholds_pct
   return [nfUpTo1.format(Math.abs(lo)), nfUpTo1.format(hi)]
 }
 
-/** "Typical means within 5% of that level." */
-export function bandText(meta) {
+/** "within 10% of" or "between 5% below and 10% above": the band, before "it" / "its usual level". */
+export function bandWords(meta) {
   const [lo, hi] = bounds(meta)
-  return lo === hi
-    ? `Typical means within ${hi}% of that level.`
-    : `Typical means from ${lo}% below to ${hi}% above that level.`
+  return lo === hi ? `within ${hi}% of` : `between ${lo}% below and ${hi}% above`
 }
 
-/** "Within 5% of it is typical; more than 5% lower is below typical; more than 5% higher is above typical." */
-export function thresholdText(meta) {
+/** "more than 10% higher" / "more than 10% lower": what "above" and "below" mean. */
+export function edgeWords(meta) {
   const [lo, hi] = bounds(meta)
-  const typical = lo === hi ? `Within ${hi}% of it is typical` : `From ${lo}% lower to ${hi}% higher is typical`
-  return `${typical}; more than ${lo}% lower is below typical; more than ${hi}% higher is above typical.`
+  return { above: `more than ${hi}% higher`, below: `more than ${lo}% lower` }
 }
+
+/** Whole percentages for {below, within, above} that add up to 100 (largest remainder). */
+export function wholePercents(probs) {
+  const keys = ['below', 'within', 'above']
+  const raw = keys.map((k) => probs[k] * 100)
+  const out = raw.map(Math.floor)
+  let left = 100 - out.reduce((a, b) => a + b, 0)
+  const order = raw.map((r, i) => [r - out[i], i]).sort((a, b) => b[0] - a[0])
+  for (const [, i] of order) {
+    if (left <= 0) break
+    out[i] += 1
+    left -= 1
+  }
+  return Object.fromEntries(keys.map((k, i) => [k, out[i]]))
+}
+
+/** The most likely outcome in words: "above its usual level", "within 10% of its usual level". */
+export function likelyText(likely, meta) {
+  if (likely === 'above_typical') return 'above its usual level'
+  if (likely === 'below_typical') return 'below its usual level'
+  return `${bandWords(meta)} its usual level`
+}
+
+/**
+ * The largest of the three chances as a short label for the hover card: {label: "Above usual", pct: 72}.
+ * Ties go to the most likely outcome in the file.
+ */
+export function topChance(probs, likely, meta) {
+  const pct = wholePercents(probs)
+  const pick = { above_typical: 'above', below_typical: 'below', typical: 'within' }[likely]
+  const key = ['above', 'below', 'within'].reduce((a, b) => (pct[b] > pct[a] || (pct[b] === pct[a] && b === pick) ? b : a))
+  const [lo, hi] = bounds(meta)
+  const label = { above: 'Above usual', below: 'Below usual', within: lo === hi ? `Within ${hi}% of usual` : 'Near usual' }
+  return { label: label[key], pct: pct[key] }
+}
+
+/** "0.171": a probability score (Brier, ranked probability score) with three decimals. */
+export const fmtScore = (n) => n.toFixed(3)
 
 /** "80" from an interval level of 0.8. */
 export const intervalPct = (meta) => Math.round(meta.interval_level * 100)

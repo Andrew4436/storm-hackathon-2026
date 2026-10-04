@@ -5,7 +5,8 @@ import { recordFor } from './api.js'
 import MapView from './MapView.jsx'
 import HoverCard from './HoverCard.jsx'
 import ControlBar from './ControlBar.jsx'
-import Legend from './Legend.jsx'
+// The file is tracked by git as src/legend.jsx (lower case); the import matches it so case-sensitive builds work.
+import Legend from './legend.jsx'
 
 const DESKTOP = '(min-width: 960px)'
 const isDesktop = () => window.matchMedia?.(DESKTOP).matches ?? true
@@ -15,7 +16,10 @@ function drawerWidth() {
   return Number.isFinite(w) && w > 0 ? w : 400
 }
 
-/** Hatch fill for "insufficient data" shapes. Referenced by the Leaflet SVG as url(#nc-hatch). */
+/**
+ * Hatch fill for "insufficient data" shapes, polygons and circle markers alike (fillFor in scale.js returns
+ * url(#nc-hatch) for them). Same colours as the --fill-insufficient swatch in index.css.
+ */
 function HatchDefs() {
   return (
     <svg className="defs" width="0" height="0" aria-hidden="true" focusable="false">
@@ -38,8 +42,9 @@ export default function MapStage({ data, mode, month, selected, onSelect, drawer
   const [hover, setHover] = useState(null)
   const topRef = useRef(null)
 
+  // "No reference yet" joins the legend only while some area in the current view has no usual level to compare with.
   const showNone = useMemo(
-    () => AREAS.some((a) => (recordFor(data, mode, month, a.name)?.tier ?? 'none') === 'none'),
+    () => AREAS.some((a) => (recordFor(data, mode, month, a.name)?.kind ?? 'none') === 'none'),
     [data, mode, month],
   )
   const highlighted = hover?.name ?? null
@@ -72,7 +77,7 @@ export default function MapStage({ data, mode, month, selected, onSelect, drawer
     <main className="stage">
       <div className="stage__top" ref={topRef}>
         <ControlBar {...controls} selected={selected} onSelect={onSelect} />
-        <Legend showNone={showNone} />
+        <Legend mode={mode} showNone={showNone} />
       </div>
 
       <div className="stage__map" onMouseLeave={clearHover}>

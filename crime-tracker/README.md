@@ -3,14 +3,19 @@
 A map of Vancouver's 24 VPD neighbourhoods. **Historical** mode shows reported-incident activity for any complete
 month from `FIRST_MONTH` (`src/config.js`) to the last complete month (`data_through` in `public/data/meta.json`);
 **Forecast** mode shows the forecast for `forecast_month` from the same file, with an uncertainty range
-(`interval_level`, 80% today). Every area is coloured below typical / typical / above typical relative to this area's
-own history, never against other areas (today: more than 10% below or above the same month one year earlier, from
-`tier_window_months`, `tier_thresholds_pct` and `tier_reference`). Data: VPD GeoDASH open data. Not affiliated with
-the Vancouver Police Department.
+(`interval_level`, 80% today). Areas are coloured on **one continuous scale** against each area's own usual level,
+never against other areas (the usual level today is the same month one year earlier, from `tier_window_months` and
+`tier_reference`; the band around it is `tier_thresholds_pct`, ±10%):
+
+- **Forecast:** the colour is `p_above - p_below`, the balance of the chances that the month ends above or below
+  the band, so amber means above is likely, teal below is likely, grey even odds. The drawer shows all three chances.
+- **Historical:** the colour is the month's actual deviation, `pct_vs_typical / 30` (30% either way is full colour).
+
+Data: VPD GeoDASH open data. Not affiliated with the Vancouver Police Department.
 
 **Where the numbers come from.** The performance block ("How well does it forecast?" in How this works) and every
-label built from the pipeline (last complete month, forecast month, horizon, model name, what "typical" means and its
-thresholds, the range level) come from `public/data/meta.json`. That file is a copy of `ml/outputs/meta.json`, made
+label built from the pipeline (last complete month, forecast month, horizon, model name, what the usual level is and
+the band around it, the range level, the chances) come from `public/data/meta.json` and the forecast file. That file is a copy of `ml/outputs/meta.json`, made
 by `npm run sync-data`; nothing in the app recomputes or hard-codes an evaluation figure. `META_DEFAULTS` in
 `src/config.js` is a fallback used only when the file or a field is missing or invalid. One exception: the held-out
 test period named in the performance block is `EVAL_FROM`..`EVAL_TO` in `src/config.js` (2025-01..2026-08), because
@@ -36,9 +41,14 @@ The view is kept in the URL query, so a demo can be bookmarked:
 - The **control bar** sits at the top left of the map (on phones, under the map). Its first row holds
   **Historical / Forecast**, the month being shown, **How this works** and the **neighbourhood list**; its second row
   holds **Play months**, the previous and next arrows and the month scrubber.
-- The **legend** is one row directly under the control bar, left-aligned with it: Below typical, Typical, Above
-  typical, Insufficient data (plus Not enough history in the earliest months). On phones it may wrap to two lines.
-  The map fits the city into the space the bar, the legend and the zoom control leave free.
+- The **legend** sits directly under the control bar, left-aligned with it: a 220 px gradient bar built from the same
+  colour function as the map (`colourFor` in `src/scale.js`), with text labels at both ends and the middle.
+  Forecast: **Likely below usual | Even | Likely above usual**, with ticks at -0.8 / 0 / +0.8 captioned **90% /
+  50/50 / 90%** (a 90% chance one way). Historical: **30% below usual | Usual | 30% above usual**. Next to it, a
+  hatched swatch for **Insufficient data** and, only while some area in the view has no usual level yet (the first 12
+  months of the record), a flat swatch for **No reference yet**. The legend keeps the same height in both modes. On
+  phones the three labels sit on one line above a full-width bar. The map fits the city into the space the bar, the
+  legend and the zoom control leave free.
 - **Historical / Forecast** switch between past months and the forecast month. In Historical mode the scrubber and
   the arrows pick any complete month, and **Play months** steps forward one month at a time (`PLAY_INTERVAL_MS` in
   `src/config.js`) and stops at the last month. Playback is off in Forecast mode.
@@ -46,6 +56,16 @@ The view is kept in the URL query, so a demo can be bookmarked:
   for keyboard, touch and screen-reader users), opens the **drawer** on the right: its figures, how it compares with
   its own history, and a chart of recent months. On phones the drawer is a **bottom sheet**. **Close** or Escape closes
   it.
+  - Forecast: the forecast number, the incident estimate, the range bar with the 12-month baseline, then the
+    **chances**: a stacked bar (below / within / above, teal / grey / amber, percentages inside wide segments, a key
+    under it) and the sentence "63% chance above its usual level for October, 15% chance below, 22% chance within 10%
+    of it." followed by "Most likely: above its usual level". The percentages are rounded to add up to 100; the month
+    comes from `forecast_month`, the band from `tier_thresholds_pct`, "most likely" from `most_likely`.
+  - Historical: the month's figures and its actual deviation ("15% above its usual level for the time of year"). No
+    chances.
+  - Insufficient data: one sentence and the chart, no bar.
+- **Hover card** (mouse only): the area, one line with its colour and either the largest chance ("Above usual: 72%")
+  or the month's deviation ("15% above usual"), the figures and a 12-month mini chart.
 - **How this works** opens the same drawer with the method, the limitations, **How well does it forecast?** (the
   evaluation figures from `meta.json`) and the sources.
 
@@ -68,16 +88,32 @@ its `forecast_month`) and uses it for:
 
 | Key | Used for |
 |---|---|
-| `data_through`, `forecast_month`, `horizon_months` | Last month on the timeline, the forecast month and file name, "N months ahead" |
-| `tier_window_months`, `tier_thresholds_pct` `[lo, hi]`, `tier_reference` (`trailing_mean` or `seasonal`) | How the typical level and the colour thresholds are described (area detail, How this works). With `seasonal` the typical level reads as the area's usual level for that time of year |
+| `data_through`, `forecast_month`, `horizon_months` | Last month on the timeline, the forecast month and file name, "N months ahead", the month in the chances sentence |
+| `tier_window_months`, `tier_thresholds_pct` `[lo, hi]`, `tier_reference` (`trailing_mean` or `seasonal`) | How the usual level and the band around it are described ("within 10% of it"; area detail, hover card, How this works). With `seasonal` it reads as the area's usual level for the time of year |
 | `interval_level` | "The range covers 80% of likely outcomes" |
 | `model` | The model name in How this works (`MODEL_NAMES` in `src/config.js`; other ids are shown as written) |
-| `evaluation` | How well does it forecast?: `wape_pct`, `improvement_vs_mean_12_pct`, `interval_coverage_pct`, `tier_accuracy_pct` vs `tier_majority_baseline_pct` |
+| `tier_mode` | `"probabilistic"`: the forecast file carries chances. Informational; the app colours by the chances whenever a record has them |
+| `probability_method` | How the chances were built (`kde` or `lognormal`), named in How this works via `PROBABILITY_METHODS` in `src/config.js`; other values are not shown |
+| `evaluation` | How well does it forecast?: `wape_pct`, `improvement_vs_mean_12_pct`, `interval_coverage_pct`, `tier_accuracy_pct` vs `tier_majority_baseline_pct` (shown as "read as a single call ... right N% of the time") |
+| `evaluation.probabilistic` | The scores of the chances: `statement` (shown as written), `brier_above` vs `brier_above_baseline` ("Brier score X vs Y for always using the base rate"), `rps` vs `rps_baseline` (and `rps_hard_tier` when present) ("ranked probability score X vs Y"). `brier_below*`, `reliability_above`, `reliability_below` (`[{bin, predicted, observed, n}]`) and `scored_on` are read and checked but not shown. A line whose fields are missing is left out |
 
-The current file (model `poisson_glm`, data through 2026-08) gives WAPE 12.9%, 4.3% less error than the 12-month
-average, 79.7% range coverage, and tier accuracy 58.9% vs 42.4% for always picking the most common colour. The app
-ignores the other top-level keys (`app`, `model_description`, `weights_source`, `generated_from`, `notes`) and shows
-only the five evaluation figures above.
+The app ignores the other top-level keys (`app`, `model_description`, `weights_source`, `generated_from`, `notes`).
+
+## Forecast and history records
+
+Forecast records (`forecast_<forecast_month>.json`) are read for: `forecast_weighted_index`,
+`forecast_incident_count`, `interval_low`, `interval_high`, `baseline_weighted_index` (the 12-month average tick),
+`p_below`, `p_within`, `p_above` (floats that sum to 1, `null` for insufficient data; rescaled if they drift from 1)
+and `most_likely` (`above_typical`, `below_typical`, `typical` or `insufficient_data`). `relative_activity_tier`,
+`pct_vs_typical` and `typical_weighted_index` may be present; `relative_activity_tier` is read only to spot
+`insufficient_data`. A forecast file without the three chances (an older pipeline) still works: each area is then
+coloured by the forecast's own `pct_vs_typical`, like a past month, and the drawer shows that deviation instead of the
+chances.
+
+History records (`history.json`) are read for `weighted_index`, `incident_count`, `pct_vs_typical` (`null` where there
+is no usual level yet: shown as "No reference yet") and `relative_activity_tier` (only to spot `insufficient_data`,
+shown hatched). `src/api.js` gives every record a `kind` (`value`, `insufficient_data` or `none`) and `v`, its place on
+the scale; `src/scale.js` holds the mapping.
 
 The file is optional. If it is missing or not valid JSON, or a field is missing or invalid, the app uses
 `META_DEFAULTS` in `src/config.js` for it and logs a warning. The evaluation block is taken whole, from the file or
@@ -136,18 +172,19 @@ VITE_BASE=/storm-hackathon-2026/ npm run build
 
 | File | Purpose |
 |---|---|
-| `src/config.js` | App name, fixed dates, `META_DEFAULTS` (fallbacks for `meta.json`), model names, tier labels and palette, map styling, limitations text |
-| `src/index.css` | Design tokens (ink, fog, tier colours, type scale, radii) and base styles |
+| `src/config.js` | App name, fixed dates, `META_DEFAULTS` (fallbacks for `meta.json`), model and probability-method names, the colour scale's three stops (`SCALE`), `HIST_SATURATE_PCT`, the off-scale fills and labels, map styling, limitations text |
+| `src/scale.js` | The continuous colour scale: `colourFor(v)` for v in [-1, 1] (OKLab between teal, grey and amber), the legend gradient, `fillFor(record)`, and how each record's fields become `v` |
+| `src/index.css` | Design tokens (ink, fog, the scale stops and off-scale fills, type scale, radii) and base styles |
 | `src/areas.js` | The 24 VPD names, polygon names, marker positions, URL slugs |
 | `src/api.js` | Loads `meta.json` (checked field by field) and the three data files under the base path, and indexes them |
-| `src/format.js` | Numbers, months, and the wording built from `meta.json` (typical level, thresholds, range, model name) |
+| `src/format.js` | Numbers, months, and the wording built from `meta.json` (usual level, band, chances, range, model name, scores) |
 | `src/App.jsx` | View state (mode, month, area, playback), URL sync, loading and error states, drawer |
 | `src/MapStage.jsx` | The full-bleed map and the panels floating over it; owns hover state; measures what the fit avoids (control bar, legend, zoom control, drawer) |
 | `src/MapView.jsx` | Leaflet map: one GeoJSON layer plus two circle markers, restyled with `setStyle`; panel- and drawer-aware fit |
 | `src/HoverCard.jsx` | The single hover card, rendered from React state (no Leaflet tooltips) |
-| `src/ControlBar.jsx`, `src/Legend.jsx` | Mode and month controls with playback and the neighbourhood list; the legend row under them |
-| `src/Drawer.jsx`, `src/AreaDetail.jsx`, `src/HowItWorks.jsx` | Drawer (bottom sheet on phones), selected-area detail, "How this works" |
-| `src/Sparkline.jsx`, `src/Swatch.jsx`, `src/Icons.jsx` | 36-month chart, tier swatch and chip, inline icons |
+| `src/ControlBar.jsx`, `src/legend.jsx` | Mode and month controls with playback and the neighbourhood list; the gradient legend under them (the file name is lower case in git; `MapStage.jsx` imports it as such) |
+| `src/Drawer.jsx`, `src/AreaDetail.jsx`, `src/HowItWorks.jsx` | Drawer (bottom sheet on phones), selected-area detail with the chances bar, "How this works" |
+| `src/Sparkline.jsx`, `src/Swatch.jsx`, `src/Icons.jsx` | 36-month chart, colour swatch, inline icons |
 | `src/ErrorBoundary.jsx` | Shows a reload message instead of a blank page if rendering fails |
 | `scripts/sync-data.mjs` | `npm run sync-data`: copies the ML outputs into `public/data/` |
 | `vite.config.js` | `base` from `VITE_BASE` (GitHub Pages) |

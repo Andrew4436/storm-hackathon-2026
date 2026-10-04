@@ -24,9 +24,14 @@ month; nothing here rates any place.
   forecast errors. Built from 2025 errors only, it contained the real 2026 value **80%**
   of the time (target 80%). It is wide: roughly -34% to
   +37% around the forecast.
-- **The map colour (tier).** Each area is coloured by comparing the forecast with its own history: `above_typical` if more than 10% above the same calendar month one year earlier, `below_typical` if more than 10% below it, otherwise `typical`.
-  On the test months the forecast's colour matched the realised colour **59%** of the
-  time, against 42% for always guessing the most common colour.
+- **Chances, not a hard label.** Each area gets the chance that its month lands more than 10% below, within
+  -10/+10%, or more than 10% above its usual level (the same calendar month one year earlier). Scored on a year
+  the chances were not built from, they beat simply quoting the base rates (RPS 0.173 vs
+  0.241) and a hard label (0.264). Built from 2025 errors and checked on 2026: when the forecast said 80-100% chance of a month more than 10% above its usual level, it happened 90% of the time (21 area-months); when the forecast said 80-100% chance of a month more than 10% below it, it happened 71% of the time (14 area-months).
+- **Most-likely label (for reference).** The most likely of the three outcomes matched the realised one
+  **62%** of the time (2025->2026) and 59% (2026->2025); the old tier from
+  the point forecast matched 59% on all test months, against
+  42% for always guessing the most common one.
 
 ## Decision rules (fixed before the results)
 
@@ -41,6 +46,10 @@ month; nothing here rates any place.
    `typical`. The same rule (`ml/src/tiers.py`) labels history, backtest and forecast.
 3. **Range.** 80% range = forecast x the 10th and 90th percentiles of actual / forecast over the
    backtest, pooled across areas (not Random Forest tree spread, which under-covers).
+4. **Probabilities.** Same reference and band as the tier; the chance of each outcome comes from the same backtest
+   ratios, smoothed either by a Gaussian kernel on log-ratios (Scott's-rule bandwidth) or by a lognormal. The
+   lognormal is used only if its out-of-sample Brier score (above + below, weighted_index, both fold directions) is
+   at most the kernel's.
 
 ## Setup
 
@@ -120,7 +129,119 @@ Reproducibility check against the independent benchmark of 2026-10-03 (incident_
 | random_forest | 14.8 | 14.8 |
 | blend (C0 + mean_12) | 13.1 | 13.1 |
 
-## Tier decision
+## Probabilities instead of tiers
+
+**What the app shows now.** Instead of one label per area, three chances that add up to 100%: that the month's
+severity-weighted index lands **more than 10% below**, **within -10/+10%**, or **more than 10%
+above** the area's usual level for that month (the same calendar month one year earlier, exactly the reference and
+band the tiers used). Fields: `p_below`, `p_within`, `p_above` (3 decimals, summing to 1.000; null for
+`insufficient_data`), `most_likely` (the largest of the three; `relative_activity_tier` now equals it, for
+compatibility), and the same for reported-incident counts (`p_below_count`, `p_within_count`, `p_above_count`).
+The map can colour by the continuous `pct_vs_typical` and show the chances on hover.
+
+**How.** The point forecast F is combined with how far reality has landed from past forecasts: the ratios
+actual / forecast of the shipped model's backtest (the same 480 points the 80%
+range uses), smoothed into a continuous distribution. p_below is the chance that ratio x F falls under
+usual x 0.90, p_above the chance it exceeds usual x 1.10. Code: `ml/src/probabilities.py`.
+
+**Smoothing chosen: `kde`.** Brier above + below on weighted_index, summed over 2025->2026 and 2026->2025: Gaussian kernel 0.6895, lognormal 0.7060 -> kde (lower).
+
+**Scoring (out of sample).** The ratios come from one test year only and the probabilities are scored on the other
+year; Musqueam (`insufficient_data`) is left out. Brier = mean squared gap between the chance given and what happened
+(0/1); RPS (ranked probability score) does the same for the ordered three outcomes, so calling "below" when "above"
+happened costs more than calling "within"; lower is better for both. Climatology = the base rates of the ratio year (2025: below 44%,
+within 26%, above 30%) given to every area. Hard tier = 100% on the most likely outcome
+(what a single label claims).
+
+weighted_index (decision target):
+
+| ratios from -> scored on | probabilities | rows | Brier 'above' | Brier 'below' | RPS | most likely = realised |
+|---|---|---|---|---|---|---|
+| 2025 -> 2026 | probabilities, Gaussian-kernel ratios **(shipped)** | 184 | 0.1595 | 0.1864 | 0.1730 | 62.5% |
+| 2025 -> 2026 | probabilities, lognormal ratios | 184 | 0.1647 | 0.1876 | 0.1761 | 62.0% |
+| 2025 -> 2026 | baseline: base rates of the ratio fold | 184 | 0.2394 | 0.2417 | 0.2406 | 40.2% |
+| 2025 -> 2026 | baseline: hard tier (100% on the most likely) | 184 | 0.2554 | 0.2717 | 0.2636 | 62.5% |
+| 2025 -> 2026 | baseline: hard tier from the point forecast | 184 | 0.2065 | 0.2935 | 0.2500 | 59.2% |
+| 2026 -> 2025 | probabilities, Gaussian-kernel ratios **(shipped)** | 276 | 0.1607 | 0.1828 | 0.1718 | 59.4% |
+| 2026 -> 2025 | probabilities, lognormal ratios | 276 | 0.1654 | 0.1884 | 0.1769 | 59.8% |
+| 2026 -> 2025 | baseline: base rates of the ratio fold | 276 | 0.2167 | 0.2475 | 0.2321 | 43.8% |
+| 2026 -> 2025 | baseline: hard tier (100% on the most likely) | 276 | 0.2717 | 0.2826 | 0.2772 | 59.4% |
+| 2026 -> 2025 | baseline: hard tier from the point forecast | 276 | 0.2246 | 0.2681 | 0.2464 | 58.7% |
+
+Reading: the probabilities beat the base rates by 28% on RPS (2025->2026) and 26%
+(2026->2025), and beat both hard labels by a wider margin: the most-likely label is
+wrong 38% of the time (2025->2026) and every miss costs the full penalty.
+**Caveat on the label.** The band (-10/+10%) is narrow compared with the forecast error (80% range about
+-34%..+37%), so the chance of landing within it peaks at
+30% (2025->2026) and `typical` is the most likely outcome in
+0% of rows (the old point-forecast tier said `typical` in
+39%; 22% of months really were). The most-likely label
+therefore matches the old tier in only 61% of rows, yet matches the realised
+outcome as often, because realised `typical` months are the minority. Show the three chances; the label is a coarse
+summary.
+
+**Reliability** (probabilities from the shipped smoothing, weighted_index). Each row groups the area-months by the
+chance the forecast gave; "happened" is how often the event then occurred. Perfect calibration: the two match.
+
+| predicted chance of 'above' | 2025->2026 mean predicted | 2025->2026 happened | 2025->2026 n | 2026->2025 mean predicted | 2026->2025 happened | 2026->2025 n |
+|---|---|---|---|---|---|---|
+| 0-20% | 12% | 16% | 51 | 11% | 7% | 89 |
+| 20-40% | 30% | 17% | 58 | 29% | 20% | 81 |
+| 40-60% | 48% | 50% | 34 | 50% | 47% | 49 |
+| 60-80% | 68% | 75% | 20 | 69% | 70% | 37 |
+| 80-100% | 87% | 90% | 21 | 88% | 65% | 20 |
+
+| predicted chance of 'below' | 2025->2026 mean predicted | 2025->2026 happened | 2025->2026 n | 2026->2025 mean predicted | 2026->2025 happened | 2026->2025 n |
+|---|---|---|---|---|---|---|
+| 0-20% | 11% | 9% | 44 | 12% | 17% | 66 |
+| 20-40% | 31% | 30% | 64 | 29% | 23% | 70 |
+| 40-60% | 51% | 64% | 39 | 50% | 55% | 73 |
+| 60-80% | 68% | 70% | 23 | 69% | 75% | 32 |
+| 80-100% | 88% | 71% | 14 | 88% | 86% | 35 |
+
+**In plain words:** Built from 2025 errors and checked on 2026: when the forecast said 80-100% chance of a month more than 10% above its usual level, it happened 90% of the time (21 area-months); when the forecast said 80-100% chance of a month more than 10% below it, it happened 71% of the time (14 area-months). With 14-89 area-months per row, gaps of about 10
+points are within sampling noise. The largest gap in a row of at least 10: 'above'
+80-100% (2026->2025), said 88% on average, happened
+65% (20 area-months).
+
+incident_count (secondary; same method, ratios from the count backtest):
+
+| ratios from -> scored on | probabilities | rows | Brier 'above' | Brier 'below' | RPS | most likely = realised |
+|---|---|---|---|---|---|---|
+| 2025 -> 2026 | probabilities, Gaussian-kernel ratios **(shipped)** | 184 | 0.1804 | 0.1650 | 0.1727 | 54.3% |
+| 2025 -> 2026 | probabilities, lognormal ratios | 184 | 0.1848 | 0.1727 | 0.1788 | 53.3% |
+| 2025 -> 2026 | baseline: base rates of the ratio fold | 184 | 0.2609 | 0.2077 | 0.2343 | 25.5% |
+| 2025 -> 2026 | baseline: hard tier (100% on the most likely) | 184 | 0.2772 | 0.3152 | 0.2962 | 54.3% |
+| 2025 -> 2026 | baseline: hard tier from the point forecast | 184 | 0.2500 | 0.2391 | 0.2446 | 54.9% |
+| 2026 -> 2025 | probabilities, Gaussian-kernel ratios **(shipped)** | 276 | 0.1555 | 0.1935 | 0.1745 | 55.4% |
+| 2026 -> 2025 | probabilities, lognormal ratios | 276 | 0.1573 | 0.1943 | 0.1758 | 54.7% |
+| 2026 -> 2025 | baseline: base rates of the ratio fold | 276 | 0.2297 | 0.2549 | 0.2423 | 31.2% |
+| 2026 -> 2025 | baseline: hard tier (100% on the most likely) | 276 | 0.2899 | 0.3007 | 0.2953 | 55.4% |
+| 2026 -> 2025 | baseline: hard tier from the point forecast | 276 | 0.2065 | 0.2681 | 0.2373 | 57.6% |
+
+| predicted chance of 'above' | 2025->2026 mean predicted | 2025->2026 happened | 2025->2026 n | 2026->2025 mean predicted | 2026->2025 happened | 2026->2025 n |
+|---|---|---|---|---|---|---|
+| 0-20% | 11% | 10% | 41 | 11% | 3% | 62 |
+| 20-40% | 30% | 30% | 63 | 29% | 16% | 89 |
+| 40-60% | 50% | 58% | 31 | 49% | 41% | 71 |
+| 60-80% | 69% | 79% | 29 | 69% | 73% | 33 |
+| 80-100% | 90% | 80% | 20 | 88% | 81% | 21 |
+
+| predicted chance of 'below' | 2025->2026 mean predicted | 2025->2026 happened | 2025->2026 n | 2026->2025 mean predicted | 2026->2025 happened | 2026->2025 n |
+|---|---|---|---|---|---|---|
+| 0-20% | 11% | 6% | 63 | 12% | 12% | 68 |
+| 20-40% | 31% | 21% | 61 | 29% | 29% | 96 |
+| 40-60% | 49% | 44% | 34 | 49% | 59% | 63 |
+| 60-80% | 69% | 47% | 15 | 69% | 71% | 35 |
+| 80-100% | 88% | 73% | 11 | 91% | 64% | 14 |
+
+All rows: `ml/outputs/probability_reliability.csv`; scores and settings: `ml/outputs/evaluation.json` (`probabilistic`).
+
+## Most-likely tier (for reference)
+
+The app no longer shows a hard tier on its own; `most_likely` (and `relative_activity_tier`, kept equal to it) is
+the largest of the three probabilities above. This section documents how the reference level and the band were
+chosen, and how the old point-forecast tier scored.
 
 Rule: `above_typical` if more than 10% above the same calendar month one year earlier, `below_typical` if more than 10% below it, otherwise `typical`. Areas averaging fewer than 10 reported incidents a month
 (Musqueam) are `insufficient_data`.
@@ -167,17 +288,48 @@ Ratio actual / forecast pooled across areas and both folds; its Q10 and Q90 mult
 | weighted_index | random_forest | 0.644 .. 1.357 | 80.0% | 82.8% | 70.4% |
 | incident_count | random_forest | 0.682 .. 1.332 | 80.0% | 81.2% | 65.4% |
 
-## Forecast tier distribution
+## Forecast probabilities and most-likely tiers
 
 <!-- forecast-tier-distribution:start -->
-Forecast for 2026-10 (thresholds -10/+10%, window 12 months, reference `seasonal`), 24 areas:
+Forecast for 2026-10 (band -10/+10% around the usual level, window 12 months, reference `seasonal`), 24 areas. Chance that the weighted index lands below / within / above the band, and the most likely of the three:
 
-| tier | areas |
+| area | forecast vs usual | below | within | above | most likely |
+|---|---|---|---|---|---|
+| Arbutus Ridge | -12.0% | 54.8% | 26.5% | 18.7% | below_typical |
+| Central Business District | -2.0% | 37.9% | 30.9% | 31.2% | below_typical |
+| Dunbar-Southlands | +27.6% | 13.1% | 16.2% | 70.7% | above_typical |
+| Fairview | -4.7% | 42.2% | 30.4% | 27.4% | below_typical |
+| Grandview-Woodland | -0.6% | 35.9% | 31.0% | 33.1% | below_typical |
+| Hastings-Sunrise | -16.1% | 62.4% | 22.9% | 14.7% | below_typical |
+| Kensington-Cedar Cottage | -32.1% | 86.1% | 8.1% | 5.8% | below_typical |
+| Kerrisdale | -22.5% | 73.3% | 16.6% | 10.1% | below_typical |
+| Killarney | -23.5% | 74.9% | 15.6% | 9.5% | below_typical |
+| Kitsilano | +15.4% | 19.3% | 24.4% | 56.3% | above_typical |
+| Marpole | -16.6% | 63.2% | 22.5% | 14.3% | below_typical |
+| Mount Pleasant | +5.6% | 27.9% | 29.9% | 42.2% | above_typical |
+| Musqueam | - | - | - | - | insufficient_data |
+| Oakridge | -29.6% | 83.3% | 10.0% | 6.7% | below_typical |
+| Renfrew-Collingwood | +30.7% | 12.1% | 14.4% | 73.5% | above_typical |
+| Riley Park | -27.0% | 79.9% | 12.3% | 7.8% | below_typical |
+| Shaughnessy | +75.3% | 4.6% | 4.3% | 91.1% | above_typical |
+| South Cambie | -7.2% | 46.4% | 29.4% | 24.2% | below_typical |
+| Stanley Park | +10.8% | 22.8% | 27.3% | 49.9% | above_typical |
+| Strathcona | +18.2% | 17.4% | 22.5% | 60.1% | above_typical |
+| Sunset | -9.3% | 50.0% | 28.3% | 21.7% | below_typical |
+| Victoria-Fraserview | +20.6% | 16.1% | 20.8% | 63.1% | above_typical |
+| West End | +4.0% | 29.8% | 30.4% | 39.8% | above_typical |
+| West Point Grey | -8.4% | 48.4% | 28.8% | 22.8% | below_typical |
+
+Most-likely tier counts (`relative_activity_tier`):
+
+| most likely | areas |
 |---|---|
-| below_typical | 8 |
-| typical | 8 |
-| above_typical | 7 |
+| below_typical | 14 |
+| typical | 0 |
+| above_typical | 9 |
 | insufficient_data | 1 |
+
+No area has `typical` as its most likely outcome: the band (-10/+10%) is narrow compared with the forecast error (80% range -34%..+37% around the forecast), so the chance of landing within it never exceeds 31% here, even for a forecast right on the usual level. The most-likely label is a coarse summary; show the three chances (or colour by `pct_vs_typical`) rather than the label.
 <!-- forecast-tier-distribution:end -->
 
 ## Limitations
@@ -210,4 +362,7 @@ Forecast for 2026-10 (thresholds -10/+10%, window 12 months, reference `seasonal
 - **Tiers made consistent and meaningful:** a teammate had set the window to 12 months and regenerated only the
   forecast, so history (36 months) and forecast (12) disagreed. History, backtest and forecast are now all produced by
   `tiers.py` with one setting: window 12, thresholds -10/+10%, reference `seasonal`.
+- **Probabilities instead of tiers** (team decision): the forecast now carries `p_below` / `p_within` / `p_above`
+  (and `_count` versions) with the same reference and band; `relative_activity_tier` = `most_likely`, kept for
+  compatibility. Smoothing `kde`, scored out of sample above.
 - Everything (features, history, evaluation, forecast, `ml/outputs/meta.json`) regenerated in one run.

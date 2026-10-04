@@ -195,6 +195,371 @@
       "median_relative_width_pct": 65.0062
     }
   ],
+  "probabilistic": {
+    "method": "kde",
+    "method_comparison": "Brier above + below on weighted_index, summed over 2025->2026 and 2026->2025: Gaussian kernel 0.6895, lognormal 0.7060 -> kde (lower).",
+    "brier_sum_by_method": {
+      "kde": 0.6895,
+      "lognormal": 0.706
+    },
+    "pooled_distribution": {
+      "weighted_index": {
+        "n_ratios": 480,
+        "bandwidth": 0.1067,
+        "mu": -0.0241,
+        "sigma": 0.3664,
+        "zero_share": 0.0063,
+        "description": "Each probability is the chance that the realised month lands below -10%, within, or above +10% of the area's usual level (same calendar month in the last 12 complete months), from the point forecast and a Gaussian-kernel smoothed distribution of the log-ratios (Scott's-rule bandwidth 0.107) of 480 past ratios actual / forecast (the same backtest points as the 80% range)."
+      },
+      "incident_count": {
+        "n_ratios": 480,
+        "bandwidth": 0.0903,
+        "mu": -0.019,
+        "sigma": 0.3101,
+        "zero_share": 0.0063,
+        "description": "Each probability is the chance that the realised month lands below -10%, within, or above +10% of the area's usual level (same calendar month in the last 12 complete months), from the point forecast and a Gaussian-kernel smoothed distribution of the log-ratios (Scott's-rule bandwidth 0.090) of 480 past ratios actual / forecast (the same backtest points as the 80% range)."
+      }
+    },
+    "n_ratios_pooled": 480,
+    "base_rates_fold_A": {
+      "below_typical": 0.4384,
+      "typical": 0.2572,
+      "above_typical": 0.3043
+    },
+    "agreement_most_likely_vs_point_tier": 0.6141,
+    "within_stats_fold_A_on_B": {
+      "max_p_within": 0.299,
+      "share_most_likely_typical": 0.0,
+      "share_realised_typical": 0.2228,
+      "share_point_tier_typical": 0.3859
+    },
+    "worst_bin": {
+      "bin": "80-100%",
+      "predicted": 0.8804,
+      "observed": 0.65,
+      "n": 20,
+      "event": "above",
+      "direction": "2026->2025",
+      "n_range": "14-89"
+    },
+    "scores": [
+      {
+        "target": "weighted_index",
+        "ratios_from": "A",
+        "scored_on": "B",
+        "method": "kde",
+        "role": "chosen",
+        "n": 184,
+        "brier_above": 0.1595,
+        "brier_below": 0.1864,
+        "rps": 0.173,
+        "accuracy_most_likely": 0.625
+      },
+      {
+        "target": "weighted_index",
+        "ratios_from": "A",
+        "scored_on": "B",
+        "method": "lognormal",
+        "role": "other",
+        "n": 184,
+        "brier_above": 0.1647,
+        "brier_below": 0.1876,
+        "rps": 0.1761,
+        "accuracy_most_likely": 0.6196
+      },
+      {
+        "target": "weighted_index",
+        "ratios_from": "A",
+        "scored_on": "B",
+        "method": "climatology",
+        "role": "climatology",
+        "n": 184,
+        "brier_above": 0.2394,
+        "brier_below": 0.2417,
+        "rps": 0.2406,
+        "accuracy_most_likely": 0.4022
+      },
+      {
+        "target": "weighted_index",
+        "ratios_from": "A",
+        "scored_on": "B",
+        "method": "hard_tier",
+        "role": "hard_tier",
+        "n": 184,
+        "brier_above": 0.2554,
+        "brier_below": 0.2717,
+        "rps": 0.2636,
+        "accuracy_most_likely": 0.625
+      },
+      {
+        "target": "weighted_index",
+        "ratios_from": "A",
+        "scored_on": "B",
+        "method": "point_tier",
+        "role": "point_tier",
+        "n": 184,
+        "brier_above": 0.2065,
+        "brier_below": 0.2935,
+        "rps": 0.25,
+        "accuracy_most_likely": 0.5924
+      },
+      {
+        "target": "weighted_index",
+        "ratios_from": "B",
+        "scored_on": "A",
+        "method": "kde",
+        "role": "chosen",
+        "n": 276,
+        "brier_above": 0.1607,
+        "brier_below": 0.1828,
+        "rps": 0.1718,
+        "accuracy_most_likely": 0.5942
+      },
+      {
+        "target": "weighted_index",
+        "ratios_from": "B",
+        "scored_on": "A",
+        "method": "lognormal",
+        "role": "other",
+        "n": 276,
+        "brier_above": 0.1654,
+        "brier_below": 0.1884,
+        "rps": 0.1769,
+        "accuracy_most_likely": 0.5978
+      },
+      {
+        "target": "weighted_index",
+        "ratios_from": "B",
+        "scored_on": "A",
+        "method": "climatology",
+        "role": "climatology",
+        "n": 276,
+        "brier_above": 0.2167,
+        "brier_below": 0.2475,
+        "rps": 0.2321,
+        "accuracy_most_likely": 0.4384
+      },
+      {
+        "target": "weighted_index",
+        "ratios_from": "B",
+        "scored_on": "A",
+        "method": "hard_tier",
+        "role": "hard_tier",
+        "n": 276,
+        "brier_above": 0.2717,
+        "brier_below": 0.2826,
+        "rps": 0.2772,
+        "accuracy_most_likely": 0.5942
+      },
+      {
+        "target": "weighted_index",
+        "ratios_from": "B",
+        "scored_on": "A",
+        "method": "point_tier",
+        "role": "point_tier",
+        "n": 276,
+        "brier_above": 0.2246,
+        "brier_below": 0.2681,
+        "rps": 0.2464,
+        "accuracy_most_likely": 0.587
+      },
+      {
+        "target": "incident_count",
+        "ratios_from": "A",
+        "scored_on": "B",
+        "method": "kde",
+        "role": "chosen",
+        "n": 184,
+        "brier_above": 0.1804,
+        "brier_below": 0.165,
+        "rps": 0.1727,
+        "accuracy_most_likely": 0.5435
+      },
+      {
+        "target": "incident_count",
+        "ratios_from": "A",
+        "scored_on": "B",
+        "method": "lognormal",
+        "role": "other",
+        "n": 184,
+        "brier_above": 0.1848,
+        "brier_below": 0.1727,
+        "rps": 0.1788,
+        "accuracy_most_likely": 0.5326
+      },
+      {
+        "target": "incident_count",
+        "ratios_from": "A",
+        "scored_on": "B",
+        "method": "climatology",
+        "role": "climatology",
+        "n": 184,
+        "brier_above": 0.2609,
+        "brier_below": 0.2077,
+        "rps": 0.2343,
+        "accuracy_most_likely": 0.2554
+      },
+      {
+        "target": "incident_count",
+        "ratios_from": "A",
+        "scored_on": "B",
+        "method": "hard_tier",
+        "role": "hard_tier",
+        "n": 184,
+        "brier_above": 0.2772,
+        "brier_below": 0.3152,
+        "rps": 0.2962,
+        "accuracy_most_likely": 0.5435
+      },
+      {
+        "target": "incident_count",
+        "ratios_from": "A",
+        "scored_on": "B",
+        "method": "point_tier",
+        "role": "point_tier",
+        "n": 184,
+        "brier_above": 0.25,
+        "brier_below": 0.2391,
+        "rps": 0.2446,
+        "accuracy_most_likely": 0.5489
+      },
+      {
+        "target": "incident_count",
+        "ratios_from": "B",
+        "scored_on": "A",
+        "method": "kde",
+        "role": "chosen",
+        "n": 276,
+        "brier_above": 0.1555,
+        "brier_below": 0.1935,
+        "rps": 0.1745,
+        "accuracy_most_likely": 0.5543
+      },
+      {
+        "target": "incident_count",
+        "ratios_from": "B",
+        "scored_on": "A",
+        "method": "lognormal",
+        "role": "other",
+        "n": 276,
+        "brier_above": 0.1573,
+        "brier_below": 0.1943,
+        "rps": 0.1758,
+        "accuracy_most_likely": 0.5471
+      },
+      {
+        "target": "incident_count",
+        "ratios_from": "B",
+        "scored_on": "A",
+        "method": "climatology",
+        "role": "climatology",
+        "n": 276,
+        "brier_above": 0.2297,
+        "brier_below": 0.2549,
+        "rps": 0.2423,
+        "accuracy_most_likely": 0.3116
+      },
+      {
+        "target": "incident_count",
+        "ratios_from": "B",
+        "scored_on": "A",
+        "method": "hard_tier",
+        "role": "hard_tier",
+        "n": 276,
+        "brier_above": 0.2899,
+        "brier_below": 0.3007,
+        "rps": 0.2953,
+        "accuracy_most_likely": 0.5543
+      },
+      {
+        "target": "incident_count",
+        "ratios_from": "B",
+        "scored_on": "A",
+        "method": "point_tier",
+        "role": "point_tier",
+        "n": 276,
+        "brier_above": 0.2065,
+        "brier_below": 0.2681,
+        "rps": 0.2373,
+        "accuracy_most_likely": 0.5761
+      }
+    ],
+    "headline": {
+      "brier_above": 0.1595,
+      "brier_below": 0.1864,
+      "brier_above_baseline": 0.2394,
+      "brier_below_baseline": 0.2417,
+      "rps": 0.173,
+      "rps_baseline": 0.2406,
+      "rps_hard_tier": 0.2636,
+      "reliability_above": [
+        {
+          "bin": "0-20%",
+          "predicted": 0.118,
+          "observed": 0.157,
+          "n": 51
+        },
+        {
+          "bin": "20-40%",
+          "predicted": 0.301,
+          "observed": 0.172,
+          "n": 58
+        },
+        {
+          "bin": "40-60%",
+          "predicted": 0.484,
+          "observed": 0.5,
+          "n": 34
+        },
+        {
+          "bin": "60-80%",
+          "predicted": 0.675,
+          "observed": 0.75,
+          "n": 20
+        },
+        {
+          "bin": "80-100%",
+          "predicted": 0.87,
+          "observed": 0.905,
+          "n": 21
+        }
+      ],
+      "reliability_below": [
+        {
+          "bin": "0-20%",
+          "predicted": 0.112,
+          "observed": 0.091,
+          "n": 44
+        },
+        {
+          "bin": "20-40%",
+          "predicted": 0.308,
+          "observed": 0.297,
+          "n": 64
+        },
+        {
+          "bin": "40-60%",
+          "predicted": 0.514,
+          "observed": 0.641,
+          "n": 39
+        },
+        {
+          "bin": "60-80%",
+          "predicted": 0.679,
+          "observed": 0.696,
+          "n": 23
+        },
+        {
+          "bin": "80-100%",
+          "predicted": 0.883,
+          "observed": 0.714,
+          "n": 14
+        }
+      ],
+      "statement": "Built from 2025 errors and checked on 2026: when the forecast said 80-100% chance of a month more than 10% above its usual level, it happened 90% of the time (21 area-months); when the forecast said 80-100% chance of a month more than 10% below it, it happened 71% of the time (14 area-months).",
+      "scored_on": "ratios from 2025 applied to 2026 (184 rows)"
+    }
+  },
   "metrics": [
     {
       "target": "weighted_index",

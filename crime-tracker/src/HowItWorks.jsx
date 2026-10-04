@@ -4,20 +4,24 @@ import {
   EVAL_TO,
   EXTRACT_END,
   FIRST_MONTH,
+  HIST_SATURATE_PCT,
   LIMITATIONS,
   PARTIAL_MONTH,
   PARTIAL_SHARE_PCT,
+  PROBABILITY_METHODS,
 } from './config.js'
 import {
+  bandWords,
   dayLabel,
+  edgeWords,
   fmtPct1,
+  fmtScore,
   intervalPct,
   modelName,
   monthLabel,
   numberWord,
   oneIn,
-  thresholdText,
-  typicalLevelText,
+  usualLevelNote,
 } from './format.js'
 
 const monthName = (key) => monthLabel(key).split(' ')[0]
@@ -31,6 +35,41 @@ function testPeriod(folds) {
 }
 
 const Num = ({ v }) => <strong className="how__num">{fmtPct1(v)}</strong>
+const Score = ({ v }) => <strong className="how__num">{fmtScore(v)}</strong>
+
+/**
+ * How well the chances scored (evaluation.probabilistic): the calibration statement, the Brier score for
+ * "above" and the ranked probability score, each against always using the base rate. Lower is better for both.
+ */
+function probabilityLines(p) {
+  if (!p) return []
+  const lines = []
+  if (p.statement) lines.push(<li key="calibration">{p.statement}</li>)
+  if (p.brier_above != null && p.brier_above_baseline != null) {
+    lines.push(
+      <li key="brier">
+        For the chance of ending above usual: Brier score <Score v={p.brier_above} /> vs{' '}
+        <Score v={p.brier_above_baseline} /> for always using the base rate (lower is better).
+      </li>,
+    )
+  }
+  if (p.rps != null && p.rps_baseline != null) {
+    lines.push(
+      <li key="rps">
+        For all three outcomes together: ranked probability score <Score v={p.rps} /> vs{' '}
+        <Score v={p.rps_baseline} /> for the base rate
+        {p.rps_hard_tier != null ? (
+          <>
+            , and <Score v={p.rps_hard_tier} /> when each month gets one outcome instead of chances.
+          </>
+        ) : (
+          '.'
+        )}
+      </li>,
+    )
+  }
+  return lines
+}
 
 /** One plain sentence per evaluation figure from meta.json; a figure the file lacks is left out. */
 function Performance({ meta }) {
@@ -68,11 +107,12 @@ function Performance({ meta }) {
   }
   if (e.tier_accuracy_pct != null) {
     lines.push(
-      <li key="tier">
-        It picked the right colour <Num v={e.tier_accuracy_pct} /> of the time
+      <li key="call">
+        Read as a single call (above, within or below usual), it was right <Num v={e.tier_accuracy_pct} /> of the
+        time
         {e.tier_majority_baseline_pct != null ? (
           <>
-            , against <Num v={e.tier_majority_baseline_pct} /> for always picking the most common colour.
+            , against <Num v={e.tier_majority_baseline_pct} /> for always picking the most common outcome.
           </>
         ) : (
           '.'
@@ -80,6 +120,7 @@ function Performance({ meta }) {
       </li>,
     )
   }
+  lines.push(...probabilityLines(e.probabilistic))
   return (
     <section>
       <h3>How well does it forecast?</h3>
@@ -88,6 +129,39 @@ function Performance({ meta }) {
         {monthLabel(to)}.
       </p>
       {lines.length > 0 && <ul className="how__stats">{lines}</ul>}
+    </section>
+  )
+}
+
+/** "Probabilities, not labels": what the chances are, how the colour follows them, and the range. */
+function ProbabilitiesSection({ meta }) {
+  const edge = edgeWords(meta)
+  const method = PROBABILITY_METHODS[meta.probability_method]
+  return (
+    <section>
+      <h3>Probabilities, not labels</h3>
+      <p>
+        We do not sort areas into fixed groups. For the forecast month we estimate the chance that the month ends
+        above or below the area&rsquo;s usual level{meta.tier_reference === 'seasonal' ? ' for that time of year' : ''},
+        using how wrong past forecasts were: we
+        look at how far real months landed from what was forecast, and spread this forecast the same way. Above means{' '}
+        {edge.above} than the usual level, below means {edge.below}, and anything {bandWords(meta)} it counts as
+        within its usual range. {usualLevelNote(meta)}
+        {method ? ` The chances come from ${method}.` : ''}
+      </p>
+      <p>
+        The colour follows the balance of those chances: amber where above is more likely, teal where below is more
+        likely, and grey where the two are close to even. The stronger the colour, the more one side outweighs the
+        other. A busy area can be teal and a quiet one amber, because each is only compared with itself.
+      </p>
+      <p>
+        For past months the colour shows how far the month actually landed from its usual level, reaching full
+        strength at {HIST_SATURATE_PCT}% either way. Areas need 12 months of history before they get a colour.
+      </p>
+      <p>
+        The forecast also gives a single number and an uncertainty range. The range is where the model expects{' '}
+        {intervalPct(meta)}% of outcomes to fall, so roughly one month in {oneIn(meta)} will land outside it.
+      </p>
     </section>
   )
 }
@@ -112,7 +186,8 @@ export default function HowItWorks({ meta, headingRef }) {
             Statistics Canada Crime Severity Index approach. The plain count of reported incidents sits beside it.
           </li>
           <li>
-            Colours each area relative to this area&rsquo;s own history. Areas are never ranked against each other.
+            Colours each area against its own usual level, on one continuous scale. Areas are never ranked against
+            each other.
           </li>
           <li>
             Forecasts {monthLabel(meta.forecast_month)} for every area, {plural(meta.horizon_months, 'month')} ahead of
@@ -139,19 +214,7 @@ export default function HowItWorks({ meta, headingRef }) {
         <p>{LIMITATIONS}</p>
       </section>
 
-      <section>
-        <h3>How the colours and the range are worked out</h3>
-        <p>
-          For each month, an area&rsquo;s severity-weighted activity is compared with its typical level:{' '}
-          {typicalLevelText(meta)}. {thresholdText(meta)} A busy area can be below typical and a quiet one above
-          typical, because each is only compared with itself. Areas need 12 months of history before they get a
-          colour.
-        </p>
-        <p>
-          The forecast gives a single number and an uncertainty range. The range is where the model expects{' '}
-          {intervalPct(meta)}% of outcomes to fall, so roughly one month in {oneIn(meta)} will land outside it.
-        </p>
-      </section>
+      <ProbabilitiesSection meta={meta} />
 
       <Performance meta={meta} />
 

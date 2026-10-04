@@ -26,10 +26,12 @@ export const META_DEFAULTS = {
   data_through: '2026-08', // last complete month
   forecast_month: '2026-10', // also names the static file: public/data/forecast_<forecast_month>.json
   horizon_months: 2,
-  tier_window_months: 12, // trailing window behind an area's "typical level" (tiers and pct_vs_typical)
-  tier_thresholds_pct: [-10, 10], // within these % of the typical level counts as typical
-  tier_reference: 'seasonal', // or 'seasonal': the typical level for that time of year
+  tier_window_months: 12, // trailing window behind an area's usual level (pct_vs_typical and the probabilities)
+  tier_thresholds_pct: [-10, 10], // the band around the usual level: "above" is past hi, "below" past lo
+  tier_reference: 'seasonal', // or 'trailing_mean': 'seasonal' is the usual level for that time of year
   interval_level: 0.8, // share of outcomes the uncertainty range is built to hold
+  tier_mode: 'probabilistic', // forecast records carry p_below / p_within / p_above
+  probability_method: null, // how the chances were built ('kde' or 'lognormal'); named in How this works
   // Held-out evaluation. Used only when the file has no evaluation block (never mixed with the file's numbers).
   evaluation: {
     wape_pct: 12.9,
@@ -37,6 +39,20 @@ export const META_DEFAULTS = {
     interval_coverage_pct: 79.7,
     tier_accuracy_pct: 58.9,
     tier_majority_baseline_pct: 42.4,
+    // Placeholders: the scores of the chances come only from the pipeline's meta.json. A null line is left out.
+    probabilistic: {
+      brier_above: null,
+      brier_below: null,
+      brier_above_baseline: null,
+      brier_below_baseline: null,
+      rps: null,
+      rps_baseline: null,
+      rps_hard_tier: null,
+      reliability_above: [],
+      reliability_below: [],
+      statement: null,
+      scored_on: null,
+    },
   },
 }
 
@@ -48,19 +64,31 @@ export const MODEL_NAMES = {
   seasonal_naive: 'the same month a year earlier',
 }
 
-// Tier colours. Keep in sync with the --tier-* tokens in index.css (Leaflet needs literal values).
-// Text is never coloured by tier: a swatch carries the colour, a label carries the meaning.
-export const TIERS = {
-  below_typical: { label: 'Below typical', short: 'below', fill: '#4FB3AC' },
-  typical: { label: 'Typical', short: 'typical', fill: '#7A8699' },
-  above_typical: { label: 'Above typical', short: 'above', fill: '#E7A64E' },
-  insufficient_data: { label: 'Insufficient data', short: 'with insufficient data', fill: '#A6B2C5', hatch: true },
-  none: { label: 'Not enough history', short: 'without enough history', fill: '#33415C' },
+// The one continuous, diverging colour scale (src/scale.js interpolates between the three stops in OKLab).
+// Keep in sync with the --scale-* and --fill-none tokens in index.css (Leaflet needs literal values).
+// Text is never coloured by the scale: a swatch or a bar carries the colour, a label carries the meaning.
+export const SCALE = {
+  below: '#4FB3AC', // v = -1: below the usual level is likely (forecast), or 30% below it (past months)
+  mid: '#7A8699', // v = 0: even odds, or at the usual level
+  above: '#E7A64E', // v = +1: above the usual level is likely, or 30% above it
 }
-export const LEGEND_ORDER = ['below_typical', 'typical', 'above_typical', 'insufficient_data']
+// Past months: a deviation of this many percent from the usual level gets the full colour.
+export const HIST_SATURATE_PCT = 30
 
-// Id of the SVG hatch pattern used to fill "insufficient data" shapes (defined once in MapView).
+// Fills that are not on the scale. "Insufficient data" is hatched (HATCH_ID); "No reference yet" (no usual level
+// to compare with: an area's first 12 months) is a flat dark fill.
+export const FILL_NONE = '#33415C'
+export const LABEL_INSUFFICIENT = 'Insufficient data'
+export const LABEL_NONE = 'No reference yet'
+
+// Id of the SVG hatch pattern used to fill "insufficient data" shapes (defined once in MapStage).
 export const HATCH_ID = 'nc-hatch'
+
+// Plain-language names for the probability_method ids meta.json can carry; any other value is left out.
+export const PROBABILITY_METHODS = {
+  kde: 'a smoothed spread of past forecast errors (a Gaussian kernel)',
+  lognormal: 'a log-normal curve fitted to past forecast errors',
+}
 
 export const MAP_STYLE = {
   fillOpacity: 0.78,

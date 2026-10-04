@@ -1,4 +1,5 @@
-"""Metrics shared by study.py and evaluate.py (regression, tier, paired month comparison, noise floor)."""
+"""Metrics shared by study.py and evaluate.py (regression, tier, probability scores and reliability, paired month
+comparison, noise floor)."""
 from __future__ import annotations
 
 import numpy as np
@@ -49,6 +50,39 @@ def tier_metrics(df: pd.DataFrame, method: str, thresholds=None) -> dict:
         "tier_majority_class": str(shares.idxmax()),
     }
     out.update({f"recall_{t}": float(r) for t, r in zip(tiers.TIERS, rec)})
+    return out
+
+
+RELIABILITY_BINS = [(0.0, 0.2), (0.2, 0.4), (0.4, 0.6), (0.6, 0.8), (0.8, 1.0)]
+
+
+def probability_scores(probs: np.ndarray, outcome: np.ndarray) -> dict:
+    """Scores for ordered 3-class probabilities [below, within, above] against realised class indices 0/1/2.
+
+    brier_above / brier_below: mean squared error of the 'above' / 'below' probability vs the 0/1 outcome.
+    rps: ranked probability score, sum over the 2 cumulative thresholds of (predicted CDF - observed CDF)^2,
+         divided by 2 so it lies in [0, 1]. Lower is better for all three.
+    """
+    obs = np.eye(3)[outcome]
+    cum_p, cum_o = np.cumsum(probs, axis=1)[:, :2], np.cumsum(obs, axis=1)[:, :2]
+    return {
+        "n": int(len(outcome)),
+        "brier_above": float(np.mean((probs[:, 2] - obs[:, 2]) ** 2)),
+        "brier_below": float(np.mean((probs[:, 0] - obs[:, 0]) ** 2)),
+        "rps": float(np.mean(((cum_p - cum_o) ** 2).sum(axis=1) / 2)),
+        "accuracy_most_likely": float(np.mean(np.argmax(probs, axis=1) == outcome)),
+    }
+
+
+def reliability(p: np.ndarray, happened: np.ndarray) -> list[dict]:
+    """Mean predicted probability vs observed frequency in 5 bins of predicted probability (last bin includes 1)."""
+    idx = np.minimum((np.asarray(p) * len(RELIABILITY_BINS)).astype(int), len(RELIABILITY_BINS) - 1)
+    out = []
+    for i, (a, b) in enumerate(RELIABILITY_BINS):
+        sel = idx == i
+        n = int(sel.sum())
+        out.append({"bin": f"{a * 100:.0f}-{b * 100:.0f}%", "predicted": float(np.mean(p[sel])) if n else None,
+                    "observed": float(np.mean(happened[sel])) if n else None, "n": n})
     return out
 
 

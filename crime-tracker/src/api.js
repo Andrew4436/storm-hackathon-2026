@@ -1,5 +1,6 @@
 import { META_DEFAULTS } from './config.js'
 import { AREAS } from './areas.js'
+import { forecastShade, historyShade } from './scale.js'
 
 // With VITE_API_URL set, read from the backend; otherwise read the static files in public/data/.
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
@@ -62,6 +63,8 @@ const META_CHECKS = {
     Array.isArray(v) && v.length === 2 && v.every((x) => finite(x) != null) && v[0] <= 0 && v[1] >= 0 && v[0] < v[1],
   tier_reference: (v) => v === 'trailing_mean' || v === 'seasonal',
   interval_level: (v) => finite(v) != null && v > 0 && v < 1,
+  tier_mode: (v) => typeof v === 'string' && v.trim() !== '',
+  probability_method: (v) => typeof v === 'string' && v.trim() !== '',
 }
 const EVAL_NUMBERS = [
   'wape_pct',
@@ -72,6 +75,34 @@ const EVAL_NUMBERS = [
   'tier_majority_baseline_pct',
   'tier_macro_f1',
 ]
+const PROB_NUMBERS = [
+  'brier_above',
+  'brier_below',
+  'brier_above_baseline',
+  'brier_below_baseline',
+  'rps',
+  'rps_baseline',
+  'rps_hard_tier',
+]
+const text = (v) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : null)
+
+/** Reliability bins [{bin, predicted, observed, n}]; malformed entries are dropped. */
+const reliability = (rows) =>
+  (Array.isArray(rows) ? rows : [])
+    .filter((r) => isObject(r) && typeof r.bin === 'string')
+    .map((r) => ({ bin: r.bin, predicted: finite(r.predicted), observed: finite(r.observed), n: finite(r.n) ?? 0 }))
+
+/** evaluation.probabilistic: how well the chances scored. Missing figures are null and their lines are left out. */
+function normaliseProbabilistic(p) {
+  if (!isObject(p)) return null
+  const out = {}
+  for (const k of PROB_NUMBERS) out[k] = finite(p[k])
+  out.reliability_above = reliability(p.reliability_above)
+  out.reliability_below = reliability(p.reliability_below)
+  out.statement = text(p.statement)
+  out.scored_on = text(p.scored_on)
+  return out
+}
 
 /**
  * The file's evaluation block, or the defaults when it has none. The two are never mixed, so every figure in
@@ -91,6 +122,7 @@ function normaliseEvaluation(e) {
   if (out.improvement_vs_mean_12_pct == null && base > 0 && shipped != null) {
     out.improvement_vs_mean_12_pct = (1 - shipped / base) * 100
   }
+  out.probabilistic = normaliseProbabilistic(e.probabilistic)
   return out
 }
 
@@ -118,9 +150,12 @@ async function loadMeta(signal) {
   }
 }
 
-/** Normalise a tier: '' and null (first 12 months of an area, partial month) become 'none'. */
-const tierOf = (t) => (t ? t : 'none')
-
+/**
+ * Every record gains `kind` ('value', 'insufficient_data', or 'none' when there is no usual level to compare
+ * with: an area's first 12 months, the partial month) and `v`, its position on the colour scale (src/scale.js).
+ * Forecast records also gain `probs` ({below, within, above}, or null) and `likely` (the most likely outcome).
+ * relative_activity_tier is read only to spot 'insufficient_data'.
+ */
 export async function loadData(signal) {
   // The forecast file is named after meta.forecast_month, so it waits for meta; the rest load in parallel.
   const metaReady = loadMeta(signal)
@@ -138,7 +173,7 @@ export async function loadData(signal) {
   const seriesByArea = new Map()
   const monthSet = new Set()
   for (const r of history) {
-    const row = { ...r, tier: tierOf(r.relative_activity_tier) }
+    const row = { ...r, ...historyShade(r) }
     byKey.set(`${r.neighbourhood}|${r.month}`, row)
     // The partial month (is_partial = 1, PARTIAL_MONTH in config) is never shown as a complete month.
     if (r.is_partial === 1 || r.month > meta.data_through) continue
@@ -148,9 +183,7 @@ export async function loadData(signal) {
   }
   for (const s of seriesByArea.values()) s.sort((a, b) => (a.month < b.month ? -1 : 1))
 
-  const forecastByArea = new Map(
-    forecast.map((f) => [f.neighbourhood, { ...f, tier: tierOf(f.relative_activity_tier) }]),
-  )
+  const forecastByArea = new Map(forecast.map((f) => [f.neighbourhood, { ...f, ...forecastShade(f) }]))
 
   return {
     meta,

@@ -18,7 +18,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 1300
+    "typical_weighted_index": 1300,
+    "p_below": 0.548,
+    "p_within": 0.265,
+    "p_above": 0.187,
+    "most_likely": "below_typical",
+    "p_below_count": 0.524,
+    "p_within_count": 0.286,
+    "p_above_count": 0.19
   },
   {
     "neighbourhood": "Central Business District",
@@ -28,7 +35,7 @@
     "forecast_incident_count": 858,
     "interval_low": 25964,
     "interval_high": 53947,
-    "relative_activity_tier": "typical",
+    "relative_activity_tier": "below_typical",
     "pct_vs_typical": -2.0,
     "baseline_weighted_index": 38997,
     "drivers": [
@@ -39,7 +46,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 40223
+    "typical_weighted_index": 40223,
+    "p_below": 0.379,
+    "p_within": 0.309,
+    "p_above": 0.312,
+    "most_likely": "below_typical",
+    "p_below_count": 0.363,
+    "p_within_count": 0.329,
+    "p_above_count": 0.308
   },
   {
     "neighbourhood": "Dunbar-Southlands",
@@ -60,7 +74,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 1102
+    "typical_weighted_index": 1102,
+    "p_below": 0.131,
+    "p_within": 0.162,
+    "p_above": 0.707,
+    "most_likely": "above_typical",
+    "p_below_count": 0.101,
+    "p_within_count": 0.147,
+    "p_above_count": 0.752
   },
   {
     "neighbourhood": "Fairview",
@@ -70,7 +91,7 @@
     "forecast_incident_count": 131,
     "interval_low": 4319,
     "interval_high": 8974,
-    "relative_activity_tier": "typical",
+    "relative_activity_tier": "below_typical",
     "pct_vs_typical": -4.7,
     "baseline_weighted_index": 6338,
     "drivers": [
@@ -81,7 +102,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 6883
+    "typical_weighted_index": 6883,
+    "p_below": 0.422,
+    "p_within": 0.304,
+    "p_above": 0.274,
+    "most_likely": "below_typical",
+    "p_below_count": 0.204,
+    "p_within_count": 0.288,
+    "p_above_count": 0.508
   },
   {
     "neighbourhood": "Grandview-Woodland",
@@ -91,7 +119,7 @@
     "forecast_incident_count": 118,
     "interval_low": 4236,
     "interval_high": 8802,
-    "relative_activity_tier": "typical",
+    "relative_activity_tier": "below_typical",
     "pct_vs_typical": -0.6,
     "baseline_weighted_index": 6162,
     "drivers": [
@@ -102,7 +130,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 6471
+    "typical_weighted_index": 6471,
+    "p_below": 0.359,
+    "p_within": 0.31,
+    "p_above": 0.331,
+    "most_likely": "below_typical",
+    "p_below_count": 0.307,
+    "p_within_count": 0.328,
+    "p_above_count": 0.365
   },
   {
     "neighbourhood": "Hastings-Sunrise",
@@ -123,7 +158,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 5233
+    "typical_weighted_index": 5233,
+    "p_below": 0.624,
+    "p_within": 0.229,
+    "p_above": 0.147,
+    "most_likely": "below_typical",
+    "p_below_count": 0.568,
+    "p_within_count": 0.267,
+    "p_above_count": 0.165
   },
   {
     "neighbourhood": "Kensington-Cedar Cottage",
@@ -144,7 +186,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 11134
+    "typical_weighted_index": 11134,
+    "p_below": 0.861,
+    "p_within": 0.081,
+    "p_above": 0.058,
+    "most_likely": "below_typical",
+    "p_below_count": 0.519,
+    "p_within_count": 0.288,
+    "p_above_count": 0.193
   },
   {
     "neighbourhood": "Kerrisdale",
@@ -165,7 +214,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 1783
+    "typical_weighted_index": 1783,
+    "p_below": 0.733,
+    "p_within": 0.166,
+    "p_above": 0.101,
+    "most_likely": "below_typical",
+    "p_below_count": 0.536,
+    "p_within_count": 0.281,
+    "p_above_count": 0.183
   },
   {
     "neighbourhood": "Killarney",
@@ -186,7 +242,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 2701
+    "typical_weighted_index": 2701,
+    "p_below": 0.749,
+    "p_within": 0.156,
+    "p_above": 0.095,
+    "most_likely": "below_typical",
+    "p_below_count": 0.685,
+    "p_within_count": 0.205,
+    "p_above_count": 0.11
   },
   {
     "neighbourhood": "Kitsilano",
@@ -207,7 +270,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 4083
+    "typical_weighted_index": 4083,
+    "p_below": 0.193,
+    "p_within": 0.244,
+    "p_above": 0.563,
+    "most_likely": "above_typical",
+    "p_below_count": 0.153,
+    "p_within_count": 0.235,
+    "p_above_count": 0.612
   },
   {
     "neighbourhood": "Marpole",
@@ -228,7 +298,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 4472
+    "typical_weighted_index": 4472,
+    "p_below": 0.632,
+    "p_within": 0.225,
+    "p_above": 0.143,
+    "most_likely": "below_typical",
+    "p_below_count": 0.468,
+    "p_within_count": 0.307,
+    "p_above_count": 0.225
   },
   {
     "neighbourhood": "Mount Pleasant",
@@ -238,7 +315,7 @@
     "forecast_incident_count": 179,
     "interval_low": 5631,
     "interval_high": 11701,
-    "relative_activity_tier": "typical",
+    "relative_activity_tier": "above_typical",
     "pct_vs_typical": 5.6,
     "baseline_weighted_index": 8655,
     "drivers": [
@@ -249,7 +326,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 8096
+    "typical_weighted_index": 8096,
+    "p_below": 0.279,
+    "p_within": 0.299,
+    "p_above": 0.422,
+    "most_likely": "above_typical",
+    "p_below_count": 0.313,
+    "p_within_count": 0.329,
+    "p_above_count": 0.358
   },
   {
     "neighbourhood": "Musqueam",
@@ -268,7 +352,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 184
+    "typical_weighted_index": 184,
+    "p_below": null,
+    "p_within": null,
+    "p_above": null,
+    "most_likely": "insufficient_data",
+    "p_below_count": null,
+    "p_within_count": null,
+    "p_above_count": null
   },
   {
     "neighbourhood": "Oakridge",
@@ -289,7 +380,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 2223
+    "typical_weighted_index": 2223,
+    "p_below": 0.833,
+    "p_within": 0.1,
+    "p_above": 0.067,
+    "most_likely": "below_typical",
+    "p_below_count": 0.326,
+    "p_within_count": 0.33,
+    "p_above_count": 0.344
   },
   {
     "neighbourhood": "Renfrew-Collingwood",
@@ -310,7 +408,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 7047
+    "typical_weighted_index": 7047,
+    "p_below": 0.121,
+    "p_within": 0.144,
+    "p_above": 0.735,
+    "most_likely": "above_typical",
+    "p_below_count": 0.093,
+    "p_within_count": 0.128,
+    "p_above_count": 0.779
   },
   {
     "neighbourhood": "Riley Park",
@@ -331,7 +436,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 4080
+    "typical_weighted_index": 4080,
+    "p_below": 0.799,
+    "p_within": 0.123,
+    "p_above": 0.078,
+    "most_likely": "below_typical",
+    "p_below_count": 0.645,
+    "p_within_count": 0.227,
+    "p_above_count": 0.128
   },
   {
     "neighbourhood": "Shaughnessy",
@@ -352,7 +464,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 693
+    "typical_weighted_index": 693,
+    "p_below": 0.046,
+    "p_within": 0.043,
+    "p_above": 0.911,
+    "most_likely": "above_typical",
+    "p_below_count": 0.108,
+    "p_within_count": 0.159,
+    "p_above_count": 0.733
   },
   {
     "neighbourhood": "South Cambie",
@@ -362,7 +481,7 @@
     "forecast_incident_count": 30,
     "interval_low": 1012,
     "interval_high": 2104,
-    "relative_activity_tier": "typical",
+    "relative_activity_tier": "below_typical",
     "pct_vs_typical": -7.2,
     "baseline_weighted_index": 1496,
     "drivers": [
@@ -373,7 +492,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 1657
+    "typical_weighted_index": 1657,
+    "p_below": 0.464,
+    "p_within": 0.294,
+    "p_above": 0.242,
+    "most_likely": "below_typical",
+    "p_below_count": 0.132,
+    "p_within_count": 0.205,
+    "p_above_count": 0.663
   },
   {
     "neighbourhood": "Stanley Park",
@@ -394,7 +520,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 680
+    "typical_weighted_index": 680,
+    "p_below": 0.228,
+    "p_within": 0.273,
+    "p_above": 0.499,
+    "most_likely": "above_typical",
+    "p_below_count": 0.079,
+    "p_within_count": 0.1,
+    "p_above_count": 0.821
   },
   {
     "neighbourhood": "Strathcona",
@@ -415,7 +548,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 10519
+    "typical_weighted_index": 10519,
+    "p_below": 0.174,
+    "p_within": 0.225,
+    "p_above": 0.601,
+    "most_likely": "above_typical",
+    "p_below_count": 0.161,
+    "p_within_count": 0.245,
+    "p_above_count": 0.594
   },
   {
     "neighbourhood": "Sunset",
@@ -425,7 +565,7 @@
     "forecast_incident_count": 94,
     "interval_low": 3012,
     "interval_high": 6258,
-    "relative_activity_tier": "typical",
+    "relative_activity_tier": "below_typical",
     "pct_vs_typical": -9.3,
     "baseline_weighted_index": 4692,
     "drivers": [
@@ -436,7 +576,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 5042
+    "typical_weighted_index": 5042,
+    "p_below": 0.5,
+    "p_within": 0.283,
+    "p_above": 0.217,
+    "most_likely": "below_typical",
+    "p_below_count": 0.346,
+    "p_within_count": 0.33,
+    "p_above_count": 0.324
   },
   {
     "neighbourhood": "Victoria-Fraserview",
@@ -457,7 +604,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 1787
+    "typical_weighted_index": 1787,
+    "p_below": 0.161,
+    "p_within": 0.208,
+    "p_above": 0.631,
+    "most_likely": "above_typical",
+    "p_below_count": 0.112,
+    "p_within_count": 0.168,
+    "p_above_count": 0.72
   },
   {
     "neighbourhood": "West End",
@@ -467,7 +621,7 @@
     "forecast_incident_count": 234,
     "interval_low": 7353,
     "interval_high": 15278,
-    "relative_activity_tier": "typical",
+    "relative_activity_tier": "above_typical",
     "pct_vs_typical": 4.0,
     "baseline_weighted_index": 10796,
     "drivers": [
@@ -478,7 +632,14 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 10735
+    "typical_weighted_index": 10735,
+    "p_below": 0.298,
+    "p_within": 0.304,
+    "p_above": 0.398,
+    "most_likely": "above_typical",
+    "p_below_count": 0.173,
+    "p_within_count": 0.259,
+    "p_above_count": 0.568
   },
   {
     "neighbourhood": "West Point Grey",
@@ -488,7 +649,7 @@
     "forecast_incident_count": 18,
     "interval_low": 685,
     "interval_high": 1423,
-    "relative_activity_tier": "typical",
+    "relative_activity_tier": "below_typical",
     "pct_vs_typical": -8.4,
     "baseline_weighted_index": 1307,
     "drivers": [
@@ -499,6 +660,13 @@
     "data_through": "2026-08",
     "horizon_months": 2,
     "model": "poisson_glm",
-    "typical_weighted_index": 1135
+    "typical_weighted_index": 1135,
+    "p_below": 0.484,
+    "p_within": 0.288,
+    "p_above": 0.228,
+    "most_likely": "below_typical",
+    "p_below_count": 0.421,
+    "p_within_count": 0.32,
+    "p_above_count": 0.259
   }
 ]

@@ -3,7 +3,7 @@
 Read `docs/ML_TEAM_CONTRACT.md` first. Every number and name comes from `ml/config.py`.
 
 Run order, from the repo root (Python 3.13; `pip install -r ml/requirements.txt`). Scripts also work from any
-other working directory. The whole pipeline takes about 40 seconds and is deterministic (re-runs give
+other working directory. The whole pipeline takes about 1-2 minutes (almost all of it in `evaluate.py`) and is deterministic (re-runs give
 byte-identical files).
 
 ```
@@ -32,8 +32,9 @@ After changing anything in `config.py` (weights, tier settings), re-run all thre
 | `src/study.py` | model study + tier grid -> `reports/model_study.md`, `outputs/study_results.csv`, `outputs/tier_study_results.csv`, `outputs/study_decision.json` |
 | `src/tiers.py` | the one tier rule (window, thresholds, trailing or seasonal reference) used by history, backtest, study and forecast |
 | `src/intervals.py` | 80% range from pooled backtest ratios actual / forecast |
-| `src/evaluate.py` | metrics, decision, `outputs/evaluation_metrics.csv`, `backtest_predictions.csv`, `evaluation.json`, `reports/evaluation.md` |
-| `src/forecast.py` | final fit, forecast, intervals, tiers, drivers -> `outputs/forecast_2026-10.{csv,json}`, `outputs/history.json`, `outputs/meta.json` |
+| `src/probabilities.py` | chance of below / within / above the tier band from the same ratios (smoothed CDF), rounding to 3 dp summing to 1 |
+| `src/evaluate.py` | metrics, decision, out-of-sample probability scores, `outputs/evaluation_metrics.csv`, `backtest_predictions.csv`, `evaluation.json`, `probability_reliability.csv`, `reports/evaluation.md` |
+| `src/forecast.py` | final fit, forecast, intervals, probabilities, tiers, drivers -> `outputs/forecast_2026-10.{csv,json}`, `outputs/history.json`, `outputs/meta.json` |
 
 Outputs for the app: `forecast_2026-10.json` (contract fields plus an additive `typical_weighted_index`, the level
 `pct_vs_typical` is measured against; `baseline_weighted_index` is still the 12-month mean), `history.json`, and
@@ -52,6 +53,21 @@ correction) qualified, so the Poisson GLM stays.
 reference, +-10%). This was picked from an 18-cell grid (`reports/model_study.md`) by tier skill over the
 always-guess-the-most-common-tier baseline, keeping a readable 2026-10 map. History, backtest and forecast use the
 same `tiers.py` rule, so `history.json` and the forecast always agree.
+
+## Probabilities instead of tiers
+
+The forecast no longer relies on one hard tier. Each record carries `p_below`, `p_within`, `p_above`: the chance
+that the month's weighted index lands more than 10% below, within +-10%, or more than 10% above the same reference
+the tier uses (`typical_weighted_index`). They come from `src/probabilities.py`: the point forecast times the
+distribution of past ratios actual / forecast (the same 480 backtest points as the 80% range), smoothed with a
+Gaussian kernel on log-ratios (Scott's-rule bandwidth); a fitted lognormal is the alternative and would be used if
+its out-of-sample Brier score were at least as good (it is not; see `reports/evaluation.md`, "Probabilities instead
+of tiers", for Brier / RPS against base-rate and hard-label baselines and the reliability tables). Values have 3
+decimals and sum to 1.000; `insufficient_data` areas (Musqueam) get nulls. `most_likely` is the largest of the three
+and `relative_activity_tier` is kept equal to it for compatibility; because the +-10% band is narrow compared with
+the forecast error, `typical` is rarely (in 2026-10: never) the most likely outcome, so show the chances or colour by
+`pct_vs_typical` rather than by the label. `p_*_count` give the same for reported-incident counts. `meta.json` has
+`tier_mode: "probabilistic"`, `probability_method` and `evaluation.probabilistic`. No pipeline step was added.
 
 ## Severity weights
 
