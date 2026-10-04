@@ -93,16 +93,6 @@ function ForecastDetail({ data, name, rec }) {
         The typical level uses this area&rsquo;s last {TIER_WINDOW_MONTHS} complete months. The 12-month average is the
         simple baseline the forecast is tested against. The range covers 80% of likely outcomes.
       </p>
-      {rec.drivers?.length > 0 && (
-        <>
-          <h3 className="detail__h3">What this is based on</h3>
-          <ul className="drivers">
-            {rec.drivers.map((d) => (
-              <li key={d}>{/[.!?]$/.test(d) ? d : `${d}.`}</li>
-            ))}
-          </ul>
-        </>
-      )}
       <h3 className="detail__h3">Severity-weighted activity, {TIER_WINDOW_MONTHS} months and forecast</h3>
       <Sparkline
         series={series}
