@@ -15,7 +15,7 @@ export const EVAL_FROM = '2025-01'
 export const EVAL_TO = '2026-08'
 export const SPARK_MONTHS = 36
 export const MINI_SPARK_MONTHS = 12
-// Playback speed for "Play months", in milliseconds per month.
+// Playback speed for "Play months",   milliseconds per month.
 export const PLAY_INTERVAL_MS = 350
 
 /**
