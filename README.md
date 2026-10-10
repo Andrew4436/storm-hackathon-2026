@@ -16,7 +16,7 @@ NeighbourCast is a map of Vancouver's 24 VPD neighbourhoods that asks one questi
 ![NeighbourCast in forecast mode for October 2026, with the drawer open](docs/screenshot.png)
 <!-- add docs/screenshot.png (1920x1080 capture of forecast mode with the drawer open) before submission -->
 
-Live app: `<app-url>` · Demo video: `<video-url>` · Repo: https://github.com/Andrew4436/storm-hackathon-2026
+Live app: "www.i-have-no-idea-what-i-am-doing.tech" · Devpost: "(https://devpost.com/software/le-safety)" · Repo: https://github.com/Andrew4436/storm-hackathon-2026
 
 ## What the app does
 
