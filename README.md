@@ -1,6 +1,6 @@
-# NeighbourCast
+# LeSafety
 
-NeighbourCast is a map of Vancouver's 24 VPD neighbourhoods that asks one question: is this month unusual for this neighbourhood? It shows reported incidents from Vancouver Police Department open data for every month from January 2003 to August 2026, with each area shaded on one continuous teal-to-amber scale against its own usual level, never against other areas. It also forecasts October 2026: for each area, the chance that the month ends more than 10% below, within 10% of, or more than 10% above its usual level, with an 80% uncertainty range and the simple baseline the forecast had to beat. Built at StormHacks 2026.
+LeSafety is a map of Vancouver's 24 VPD neighbourhoods that asks one question: is this month unusual for this neighbourhood? It shows reported incidents from Vancouver Police Department open data for every month from January 2003 to August 2026, with each area shaded on one continuous teal-to-amber scale against its own usual level, never against other areas. It also forecasts October 2026: for each area, the chance that the month ends more than 10% below, within 10% of, or more than 10% above its usual level, with an 80% uncertainty range and the simple baseline the forecast had to beat. Built at StormHacks 2026.
 
 ## The question it answers
 
@@ -13,7 +13,7 @@ NeighbourCast is a map of Vancouver's 24 VPD neighbourhoods that asks one questi
 - The smallest unit is one neighbourhood in one month. No streets, addresses or people.
 - It does not rank neighbourhoods and does not rate places to live or visit.
 
-![NeighbourCast in forecast mode for October 2026, with the drawer open](docs/screenshot.png)
+![LeSafety in forecast mode for October 2026, with the drawer open](docs/screenshot.png)
 <!-- add docs/screenshot.png (1920x1080 capture of forecast mode with the drawer open) before submission -->
 
 Live app: "www.i-have-no-idea-what-i-am-doing.tech" · Devpost: "(https://devpost.com/software/le-safety)" · Repo: https://github.com/Andrew4436/storm-hackathon-2026
@@ -61,7 +61,7 @@ backend/ (FastAPI)          crime-tracker/public/data/ <---+
      |                              |
      +-------------+----------------+
                    v
-crime-tracker/ (Vite + React + Leaflet): the NeighbourCast map
+crime-tracker/ (Vite + React + Leaflet): the LeSafety map
 ```
 
 Nothing is recomputed at request time. The backend and the static files serve the same JSON shapes.
@@ -144,7 +144,7 @@ The team contract is `docs/ML_TEAM_CONTRACT.md`. Data rules are in `data/README.
 
 ## Disclaimer
 
-- NeighbourCast is not affiliated with or endorsed by the Vancouver Police Department.
+- LeSafety is not affiliated with or endorsed by the Vancouver Police Department.
 - VPD cautions against using this data to judge the safety of a specific location.
 - The data shows reported, founded incidents. Some incidents are never reported, and recent months can be revised.
 - VPD's full legal disclaimer is in `legal_disclaimer.txt`. The in-app limitations text is in `data/README.md`.
@@ -167,7 +167,7 @@ The team contract is `docs/ML_TEAM_CONTRACT.md`. Data rules are in `data/README.
 |---|---|
 | Humberto | Data cleaning, integration, this release |
 | Chibueze | ML: features, models, evaluation, uncertainty ranges |
-| James | Frontend: the NeighbourCast map app |
+| James | Frontend: the LeSafety map app |
 | Andrew | Backend, deployment, repo owner |
 
 ## Attribution and licences
@@ -177,4 +177,4 @@ The team contract is `docs/ML_TEAM_CONTRACT.md`. Data rules are in `data/README.
 - **Map data:** © OpenStreetMap contributors, available under the Open Database Licence (fallback basemap).
 - **Basemap tiles:** Esri World Dark Gray Canvas, © Esri and its data providers.
 - **Map library:** Leaflet (BSD 2-Clause licence), with react-leaflet.
-- **Severity weights:** Statistics Canada, *Measuring Crime in Canada: Introducing the Crime Severity Index and Improvements to the Uniform Crime Reporting Survey*, catalogue 85-004-X (2009), Table 1, https://www150.statcan.gc.ca/n1/pub/85-004-x/2009001/t001-eng.htm. NeighbourCast's index is CSI-inspired; it is not the official Crime Severity Index and not a Statistics Canada statistic.
+- **Severity weights:** Statistics Canada, *Measuring Crime in Canada: Introducing the Crime Severity Index and Improvements to the Uniform Crime Reporting Survey*, catalogue 85-004-X (2009), Table 1, https://www150.statcan.gc.ca/n1/pub/85-004-x/2009001/t001-eng.htm. LeSafety's index is CSI-inspired; it is not the official Crime Severity Index and not a Statistics Canada statistic.
